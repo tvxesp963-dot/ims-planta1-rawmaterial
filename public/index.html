@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260710a";
+var APP_VERSION = "20260712a";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -310,6 +310,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="fr"><div class="ft2">P5</div><div class="fb-w"><div class="fb" id="bP5" style="width:0%;background:linear-gradient(90deg,#00876a,#00e676)"></div></div><div class="fi2" id="fP5">–</div></div>
       <div class="fr" style="border:none"><div class="ft2">P6</div><div class="fb-w"><div class="fb" id="bP6" style="width:0%;background:linear-gradient(90deg,#c47800,#ffb300)"></div></div><div class="fi2" id="fP6">–</div></div>
     </div>
+    <div id="dashTransito" onclick="goPage('pgTransito',document.querySelectorAll('.bni')[4])" style="display:none;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:.7rem;cursor:pointer">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(77,166,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚢</div>
+      <div style="flex:1;min-width:0">
+        <div id="dashTransitoTxt" style="font-size:11px;font-weight:600">–</div>
+        <div id="dashTransitoSub" style="font-size:9px;color:var(--text2)">–</div>
+      </div>
+      <div style="font-size:10px;color:var(--accent)">Ver todo ›</div>
+    </div>
     <div class="sh"><span class="mon-pulse"></span>Monitor stock mínimo</div>
     <div class="fc" id="monitorStockMin" style="padding:.7rem"></div>
     <div class="sh">Últimos movimientos</div>
@@ -443,6 +451,73 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   </div>
 </div>
 
+  <div id="pgTransito" class="page">
+    <div class="sh" style="display:flex;justify-content:space-between;align-items:center">
+      <span>🚢 Material en tránsito</span>
+      <button id="btnNuevoEmbarque" onclick="abrirNuevoEmbarque()" style="display:none;background:rgba(77,166,255,.15);border:1px solid rgba(77,166,255,.3);border-radius:8px;color:var(--accent);font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer">+ Nuevo embarque</button>
+    </div>
+    <div id="transitoEmpty" style="display:none;padding:2rem;text-align:center;color:var(--text2)">
+      <div style="font-size:36px;margin-bottom:.6rem">🚢</div>
+      <div style="font-size:13px">Sin embarques en tránsito</div>
+    </div>
+    <div style="overflow-x:auto"><table id="transitoTabla" style="border-collapse:collapse;font-size:10px;width:100%;white-space:nowrap"></table></div>
+    <div id="transitoDetalle" style="display:none;margin-top:.7rem"></div>
+  </div>
+
+  <div id="modalEmbarque" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:750;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
+    <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:1.4rem 1.1rem 2.2rem;border-top:1px solid var(--border2);max-height:90vh;overflow-y:auto">
+      <div style="width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 1rem"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700" id="embModalTitulo">🚢 Nuevo embarque</div>
+        <button onclick="cerrarModalEmbarque()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">✕</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Referencia / Contenedor</div><input id="embRef" class="ref-in" style="margin:0;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" placeholder="SYN-0451"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Empresa</div><input id="embEmpresa" class="ref-in" style="margin:0" value="Synsai"></div>
+      </div>
+
+      <div style="font-size:10px;color:var(--text2);margin:8px 0 4px">Part Numbers en este embarque</div>
+      <div id="embPnRows" style="margin-bottom:6px"></div>
+      <button onclick="embAgregarRenglon()" style="width:100%;padding:8px;background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;color:var(--text2);font-size:11px;cursor:pointer;margin-bottom:.8rem">+ Agregar Part Number</button>
+
+      <div style="font-size:11px;font-weight:600;color:#4DA6FF;letter-spacing:.6px;margin:10px 0 6px">📅 FECHAS ETD / ETA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Salida Synsai (Corea)</div><input id="embSalidaSynsai" type="date" class="ref-in" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETD Puerto Busan (zarpe)</div><input id="embEtdBusan" type="date" class="ref-in" style="margin:0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETA Long Beach</div><input id="embEtaLB" type="date" class="ref-in" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETA Ensenada</div><input id="embEtaESE" type="date" class="ref-in" style="margin:0"></div>
+      </div>
+      <div style="margin-bottom:.6rem"><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETA Almacén (Eunsung)</div><input id="embEtaAlmacen" type="date" class="ref-in" style="margin:0"></div>
+
+      <div style="font-size:11px;font-weight:600;color:#00e676;letter-spacing:.6px;margin:10px 0 6px">🏢 DESTINO</div>
+      <select id="embEdificio" class="loc-sel" style="margin:0 0 .6rem">
+        <option value="P1">🏢 Edificio P1</option>
+        <option value="P5">🏢 Edificio P5</option>
+        <option value="P6">🏢 Edificio P6</option>
+      </select>
+
+      <div style="font-size:11px;font-weight:600;color:#FFBA00;letter-spacing:.6px;margin:10px 0 6px">📍 PASO ACTUAL</div>
+      <select id="embPaso" class="loc-sel" style="margin:0 0 1rem">
+        <option value="0">🏭 Salida Synsai (Corea)</option>
+        <option value="1">🚢 Zarpe Puerto Busan</option>
+        <option value="2">🌊 Tránsito marítimo</option>
+        <option value="3">⚓ Arribo Long Beach</option>
+        <option value="4">⚓ Arribo Ensenada</option>
+        <option value="5">📋 Aduana / Liberación</option>
+        <option value="6">🚛 Tránsito terrestre</option>
+        <option value="7">📦 Recibido en Almacén</option>
+      </select>
+
+      <div style="display:flex;gap:8px">
+        <button onclick="cerrarModalEmbarque()" style="flex:1;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:13px;cursor:pointer">Cancelar</button>
+        <button onclick="guardarEmbarque()" style="flex:2;padding:11px;background:var(--accent2);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 Guardar embarque</button>
+      </div>
+    </div>
+  </div>
+
   <div id="pgAdmin" class="page">
     <div class="sh">Administración</div>
     <div class="ag">
@@ -465,6 +540,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
             <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Correo</th>
             <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Nombre</th>
             <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Rol</th>
+            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Planta</th>
             <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Estado</th>
             <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Acciones</th>
           </tr></thead>
@@ -486,6 +562,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
           <option value="operador" selected>Operador</option>
           <option value="viewer">Viewer</option>
         </select>
+      </div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Plantas a las que tendrá acceso</div>
+      <div style="display:flex;gap:10px;margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:8px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="nuPlantaP1" checked style="width:15px;height:15px"> P1</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="nuPlantaP3" style="width:15px;height:15px"> P3</label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="nuPlantaP4" style="width:15px;height:15px"> P4</label>
       </div>
       <button class="btn-conf bc-E" onclick="addImsUser()">+ Agregar usuario</button>
     </div>
@@ -548,6 +630,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bni" onclick="goPage('pgInv',this)"><span class="bni-i">📦</span>Inv.</button>
     <button class="bni" id="navMov" onclick="goPage('pgMov',this)"><span class="bni-i">🔄</span>Mov.</button>
     <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span>Hist.</button>
+    <button class="bni" onclick="goPage('pgTransito',this)"><span class="bni-i">🚢</span>Tránsito</button>
     <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span>Admin</button>
   </div>
 </div>
@@ -1034,8 +1117,9 @@ async function doLogin() {
       const snap = await db.collection('ims_usuarios').where('email','==',e).get();
       if (!snap.empty) {
         const u = snap.docs[0].data();
-        // Verificar que el usuario pertenece a P1 o es admin global
-        if (u.planta && u.planta !== 'P1' && u.planta !== 'TODAS') {
+        // Verificar que el usuario pertenece a P1 (individual o dentro de un arreglo) o es admin global
+        const plantaOk = !u.planta || u.planta === 'TODAS' || (Array.isArray(u.planta) ? u.planta.includes('P1') : u.planta === 'P1');
+        if (!plantaOk) {
           err.textContent = 'Este usuario no tiene acceso a Planta 1. Usa el IMS de tu planta.'; return;
         }
         role = u.role || u.rol || 'viewer';
@@ -1084,6 +1168,7 @@ function launch() {
   startSync();
   loadFromFirestore();
   if(!isViewer){ updateDash(); renderInv(); renderHist(); renderLocMap(); buildAdmin(); }
+  loadEmbarques();
 }
 
 // init on load
@@ -1121,7 +1206,7 @@ function goBack() {
   pageHistory.pop(); // quitar actual
   const prev = pageHistory[pageHistory.length-1] || 'pgDash';
   const navMap = {
-    pgDash:0, pgInv:1, pgMov:2, pgHist:3, pgAdmin:4
+    pgDash:0, pgInv:1, pgMov:2, pgHist:3, pgTransito:4, pgAdmin:5
   };
   const bniBtns = document.querySelectorAll('.bni');
   const btn = bniBtns[navMap[prev]] || bniBtns[0];
@@ -1660,16 +1745,18 @@ async function loadImsUsers() {
     const tb=document.getElementById('ims-users-table');
     if(!tb) return;
     tb.innerHTML='';
-    if(IMS_USUARIOS.length===0){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--text2)">Sin usuarios registrados</td></tr>';return;}
+    if(IMS_USUARIOS.length===0){tb.innerHTML='<tr><td colspan="6" style="text-align:center;padding:12px;color:var(--text2)">Sin usuarios registrados</td></tr>';return;}
     IMS_USUARIOS.forEach(u=>{
       const role=u.role||u.rol||'viewer';
       const rolColor=role==='admin'?'#9b59b6':role==='operador'?'#2ecc71':'#e67e22';
       const activo=u.activo!==false;
       const isMe=u.email===user?.email;
+      const plantaTxt = !u.planta ? 'Sin asignar' : (u.planta==='TODAS' ? 'TODAS' : (Array.isArray(u.planta) ? u.planta.join(', ') : u.planta));
       const tr=document.createElement('tr');
       tr.innerHTML=`<td style="font-size:.65rem;padding:6px 8px;border-bottom:1px solid var(--border2)">${u.email}</td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><strong>${u.nombre||'—'}</strong></td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><span style="font-size:.6rem;background:${rolColor}22;color:${rolColor};padding:2px 8px;border-radius:20px;font-weight:600">${role}</span></td>
+        <td style="padding:6px 8px;border-bottom:1px solid var(--border2);font-size:.65rem;color:var(--accent)">${plantaTxt}</td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${activo?'var(--green)':'var(--red)'};margin-right:4px"></span>${activo?'Activo':'Inactivo'}</td>
         <td style="padding:6px 8px;border-bottom:1px solid var(--border2)">${isMe?'<span style="font-size:.65rem;color:var(--text2)">Tú</span>':
           `<button onclick="toggleImsUser('${u.docId}',${activo})" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text);border-radius:5px;padding:3px 8px;font-size:.65rem;cursor:pointer;margin-right:3px">${activo?'Desactivar':'Activar'}</button>
@@ -1685,12 +1772,21 @@ async function addImsUser() {
   const nombre=document.getElementById('nuNombre').value.trim();
   const pass=document.getElementById('nuPass')?document.getElementById('nuPass').value:'';
   const role=document.getElementById('nuRol').value;
+  const plantas=[];
+  if(document.getElementById('nuPlantaP1').checked) plantas.push('P1');
+  if(document.getElementById('nuPlantaP3').checked) plantas.push('P3');
+  if(document.getElementById('nuPlantaP4').checked) plantas.push('P4');
   if(!email||!nombre){toast('Ingresa email y nombre','err');return;}
+  if(!plantas.length){toast('Selecciona al menos una planta','err');return;}
   if(!db){toast('Sin Firebase','err');return;}
+  const plantaGuardar = plantas.length===3 ? 'TODAS' : (plantas.length===1 ? plantas[0] : plantas);
   try {
-    await db.collection('ims_usuarios').add({email,nombre,role,activo:true,planta:'P1',createdAt:new Date().toISOString()});
+    await db.collection('ims_usuarios').add({email,nombre,role,activo:true,planta:plantaGuardar,createdAt:new Date().toISOString()});
     ['nuEmail','nuNombre'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     const passEl=document.getElementById('nuPass');if(passEl)passEl.value='';
+    document.getElementById('nuPlantaP1').checked=true;
+    document.getElementById('nuPlantaP3').checked=false;
+    document.getElementById('nuPlantaP4').checked=false;
     toast('✅ Usuario agregado. Crea sus credenciales en Firebase → Authentication.','ok');
     loadImsUsers();
   } catch(e){toast('Error: '+e.message,'err');}
@@ -1942,6 +2038,237 @@ async function cleanDuplicates() {
 window.cleanDuplicates = cleanDuplicates;
 
 function resetStock() { if(user.role!=='admin'){toast('Solo admins','err');return;} if(!confirm('¿Resetear inventario inicial?'))return; items=MASTER.map(r=>({...r,entradas:0,salidas:0,actual:r.inicial,historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:r.inicial,loc:r.ubicacion,user:'Sistema',ref:'Reset'}]})); movs=[]; saveLocal(); updateDash(); renderInv(); renderHist(); renderLocMap(); toast('Stock reseteado','ok'); }
+
+// ── TRÁNSITO ──
+var embarques = JSON.parse(localStorage.getItem('ims1p_embarques')||'[]');
+var _embEditId = null;
+var TRANSITO_PASOS = ['🏭 Salida Synsai','🚢 Zarpe Busan','🌊 Tránsito marítimo','⚓ Arribo Long Beach','⚓ Arribo Ensenada','📋 Aduana','🚛 Tránsito terrestre','📦 Recibido'];
+
+function saveEmbarquesLocal() { localStorage.setItem('ims1p_embarques', JSON.stringify(embarques)); }
+
+async function loadEmbarques() {
+  if (!db) { renderTransito(); return; }
+  try {
+    const snap = await db.collection('planta1_papel_transito').orderBy('createdAt','desc').get();
+    embarques = snap.docs.map(d=>({_docId:d.id, ...d.data()}));
+    saveEmbarquesLocal();
+  } catch(e) {}
+  renderTransito();
+  updateDashTransito();
+}
+
+function fmtFecha(iso) { if(!iso) return '—'; const d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('es-MX',{day:'2-digit',month:'short'}); }
+
+function renderTransito() {
+  const tabla = document.getElementById('transitoTabla');
+  const empty = document.getElementById('transitoEmpty');
+  const btnNuevo = document.getElementById('btnNuevoEmbarque');
+  const detalle = document.getElementById('transitoDetalle');
+  if (btnNuevo) btnNuevo.style.display = (user && user.role==='admin') ? 'block' : 'none';
+  if (!tabla) return;
+  if (detalle) { detalle.style.display='none'; detalle.innerHTML=''; }
+
+  const filas = [];
+  embarques.forEach(function(emb, embIdx) {
+    (emb.pns||[]).forEach(function(p, pIdx) {
+      filas.push({emb, embIdx, p, pIdx});
+    });
+  });
+
+  if (!filas.length) { tabla.innerHTML=''; if(empty) empty.style.display='block'; return; }
+  if (empty) empty.style.display = 'none';
+
+  const th = 'style="background:var(--bg3);color:var(--text2);font-size:9px;padding:6px 8px;border:1px solid var(--border);text-align:center"';
+  const thL = 'style="background:var(--bg3);color:var(--text2);font-size:9px;padding:6px 8px;border:1px solid var(--border);text-align:left"';
+  let head =
+    '<thead><tr>'+
+      '<th rowspan="2" '+th+'>No.</th>'+
+      '<th rowspan="2" '+thL+'>Code No.</th>'+
+      '<th rowspan="2" '+th+'>Plt Qty</th>'+
+      '<th rowspan="2" '+th+'>Pc</th>'+
+      '<th rowspan="2" '+th+'>ETD Busan</th>'+
+      '<th colspan="2" style="background:rgba(77,166,255,.12);color:var(--accent);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center">ETA</th>'+
+      '<th colspan="3" style="background:rgba(29,158,117,.12);color:var(--green);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center">Eunsung</th>'+
+    '</tr><tr>'+
+      '<th '+th+'>Ese port</th><th '+th+'>Lb port</th>'+
+      '<th '+th+'>P1</th><th '+th+'>P5</th><th '+th+'>P6</th>'+
+    '</tr></thead>';
+
+  const td = 'style="padding:6px 8px;border:1px solid var(--border);text-align:center;font-size:10px"';
+  let body = '<tbody>' + filas.map(function(f, i) {
+    const pzasEq = Math.round((parseFloat(f.p.plt)||0)*(parseFloat(f.p.pzasPallet)||0));
+    const ed = f.emb.edificio||'P1';
+    const cellP1 = ed==='P1' ? ('<td '+td+' onclick="verDetalleEmbarque('+f.embIdx+')" style="cursor:pointer;color:var(--green);font-weight:700">'+(parseFloat(f.p.plt)||0).toLocaleString()+'</td>') : ('<td '+td+' onclick="verDetalleEmbarque('+f.embIdx+')" style="cursor:pointer;color:var(--text2)">—</td>');
+    const cellP5 = ed==='P5' ? ('<td '+td+' onclick="verDetalleEmbarque('+f.embIdx+')" style="cursor:pointer;color:var(--green);font-weight:700">'+(parseFloat(f.p.plt)||0).toLocaleString()+'</td>') : ('<td '+td+' onclick="verDetalleEmbarque('+f.embIdx+')" style="cursor:pointer;color:var(--text2)">—</td>');
+    const cellP6 = ed==='P6' ? ('<td '+td+' onclick="verDetalleEmbarque('+f.embIdx+')" style="cursor:pointer;color:var(--green);font-weight:700">'+(parseFloat(f.p.plt)||0).toLocaleString()+'</td>') : ('<td '+td+' onclick="verDetalleEmbarque('+f.embIdx+')" style="cursor:pointer;color:var(--text2)">—</td>');
+    return '<tr onclick="verDetalleEmbarque('+f.embIdx+')" style="cursor:pointer">'+
+      '<td '+td+'>'+(i+1)+'</td>'+
+      '<td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;color:var(--accent);font-weight:600;cursor:pointer" onclick="verDetalleEmbarque('+f.embIdx+')">'+f.p.pn+'</td>'+
+      '<td '+td+' style="font-weight:700">'+(parseFloat(f.p.plt)||0).toLocaleString()+'</td>'+
+      '<td '+td+' style="color:var(--text2)">'+pzasEq.toLocaleString()+'</td>'+
+      '<td '+td+'>'+fmtFecha(f.emb.etdBusan)+'</td>'+
+      '<td '+td+'>'+fmtFecha(f.emb.etaESE)+'</td>'+
+      '<td '+td+'>'+fmtFecha(f.emb.etaLB)+'</td>'+
+      cellP1+cellP5+cellP6+
+    '</tr>';
+  }).join('') + '</tbody>';
+
+  tabla.innerHTML = head + body;
+}
+
+function verDetalleEmbarque(embIdx) {
+  const emb = embarques[embIdx];
+  const detalle = document.getElementById('transitoDetalle');
+  if (!emb || !detalle) return;
+  const paso = parseInt(emb.paso)||0;
+  const canEdit = user && user.role==='admin';
+  const dots = TRANSITO_PASOS.map(function(_,i){
+    const done = i<paso, active = i===paso;
+    const bg = done?'#1d9e75':active?'var(--accent)':'var(--bg3)';
+    const fg = done?'#04342c':active?'#fff':'var(--text2)';
+    return '<div style="flex:1;display:flex;align-items:center">'+
+      '<div style="width:18px;height:18px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:8px;color:'+fg+';flex-shrink:0">'+(done?'✓':(i+1))+'</div>'+
+      (i<TRANSITO_PASOS.length-1?'<div style="flex:1;height:2px;background:'+(done?'#1d9e75':'var(--bg3)')+'"></div>':'')+
+      '</div>';
+  }).join('');
+  detalle.style.display = 'block';
+  detalle.innerHTML =
+    '<div class="fc" style="padding:.85rem">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+        '<div><div style="font-family:Rajdhani,sans-serif;font-weight:700;font-size:14px;color:var(--accent)">'+(emb.ref||'—')+'</div><div style="font-size:9px;color:var(--text2)">'+(emb.empresa||'Synsai')+' · '+(emb.pns||[]).length+' PNs · 🏢 '+(emb.edificio||'P1')+'</div></div>'+
+        (canEdit?('<button onclick="abrirEditarEmbarque('+embIdx+')" style="background:rgba(77,166,255,.15);border:1px solid rgba(77,166,255,.3);border-radius:6px;color:var(--accent);font-size:11px;padding:4px 10px;cursor:pointer">✏️ Editar</button>'):'')+
+      '</div>'+
+      '<div style="display:flex;align-items:center;margin-bottom:6px">'+dots+'</div>'+
+      '<div style="font-size:9px;color:var(--accent);font-weight:600;margin-bottom:8px">'+TRANSITO_PASOS[paso]+(paso<7?(' · ETA almacén: '+fmtFecha(emb.etaAlmacen)):'')+'</div>'+
+      '<div style="font-size:8px;color:var(--text2);margin-top:6px">Actualizado por '+(emb.updatedBy||'—')+' · '+fmtFecha(emb.updatedAt?emb.updatedAt.split('T')[0]:'')+'</div>'+
+    '</div>';
+}
+window.verDetalleEmbarque = verDetalleEmbarque;
+
+var _embPnCounter = 0;
+function embAgregarRenglon(pn,desc,plt,pzasPallet) {
+  _embPnCounter++;
+  const id = 'embRow'+_embPnCounter;
+  const wrap = document.getElementById('embPnRows');
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 70px 28px;gap:5px;margin-bottom:5px;align-items:center';
+  div.innerHTML =
+    '<input class="ref-in emb-pn" placeholder="PN" style="margin:0;font-family:monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" value="'+(pn||'')+'">'+
+    '<input class="ref-in emb-plt" type="number" step="0.1" placeholder="Pallets" style="margin:0" value="'+(plt||'')+'">'+
+    '<input class="ref-in emb-pzp" type="number" placeholder="Pzas/plt" style="margin:0" value="'+(pzasPallet||'')+'">'+
+    '<button onclick="document.getElementById(&quot;'+id+'&quot;).remove()" style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);border-radius:6px;color:#ff6b6b;font-size:14px;height:36px;cursor:pointer">✕</button>';
+  wrap.appendChild(div);
+}
+
+function abrirNuevoEmbarque() {
+  if (!user || user.role!=='admin') { toast('Solo admins','err'); return; }
+  _embEditId = null;
+  document.getElementById('embModalTitulo').textContent = '🚢 Nuevo embarque';
+  document.getElementById('embRef').value = '';
+  document.getElementById('embEmpresa').value = 'Synsai';
+  document.getElementById('embSalidaSynsai').value = '';
+  document.getElementById('embEtdBusan').value = '';
+  document.getElementById('embEtaLB').value = '';
+  document.getElementById('embEtaESE').value = '';
+  document.getElementById('embEtaAlmacen').value = '';
+  document.getElementById('embEdificio').value = 'P1';
+  document.getElementById('embPaso').value = '0';
+  document.getElementById('embPnRows').innerHTML = '';
+  embAgregarRenglon();
+  document.getElementById('modalEmbarque').style.display = 'flex';
+}
+window.abrirNuevoEmbarque = abrirNuevoEmbarque;
+
+function abrirEditarEmbarque(idx) {
+  if (!user || user.role!=='admin') { toast('Solo admins','err'); return; }
+  const emb = embarques[idx];
+  if (!emb) return;
+  _embEditId = idx;
+  document.getElementById('embModalTitulo').textContent = '🚢 Editar embarque';
+  document.getElementById('embRef').value = emb.ref||'';
+  document.getElementById('embEmpresa').value = emb.empresa||'Synsai';
+  document.getElementById('embSalidaSynsai').value = emb.salidaSynsai||'';
+  document.getElementById('embEtdBusan').value = emb.etdBusan||'';
+  document.getElementById('embEtaLB').value = emb.etaLB||'';
+  document.getElementById('embEtaESE').value = emb.etaESE||'';
+  document.getElementById('embEtaAlmacen').value = emb.etaAlmacen||'';
+  document.getElementById('embEdificio').value = emb.edificio||'P1';
+  document.getElementById('embPaso').value = String(emb.paso||0);
+  document.getElementById('embPnRows').innerHTML = '';
+  (emb.pns||[]).forEach(function(p){ embAgregarRenglon(p.pn,p.desc,p.plt,p.pzasPallet); });
+  if (!(emb.pns||[]).length) embAgregarRenglon();
+  document.getElementById('modalEmbarque').style.display = 'flex';
+}
+window.abrirEditarEmbarque = abrirEditarEmbarque;
+
+function cerrarModalEmbarque() { document.getElementById('modalEmbarque').style.display = 'none'; }
+window.cerrarModalEmbarque = cerrarModalEmbarque;
+
+async function guardarEmbarque() {
+  if (!user || user.role!=='admin') { toast('Solo admins','err'); return; }
+  const ref = document.getElementById('embRef').value.trim();
+  if (!ref) { toast('La referencia/contenedor es obligatoria','err'); return; }
+  const pnRows = Array.from(document.getElementById('embPnRows').children);
+  const pns = pnRows.map(function(row){
+    const pn = row.querySelector('.emb-pn').value.trim().toUpperCase();
+    const plt = parseFloat(row.querySelector('.emb-plt').value)||0;
+    const pzasPallet = parseFloat(row.querySelector('.emb-pzp').value)||0;
+    const existing = items.find(function(i){ return i.pn===pn; });
+    return {pn, desc: existing?existing.desc:'', plt, pzasPallet};
+  }).filter(function(p){ return p.pn; });
+  if (!pns.length) { toast('Agrega al menos un Part Number','err'); return; }
+
+  const isEdit = (_embEditId !== null && _embEditId !== undefined);
+  const existingEmb = isEdit ? embarques[_embEditId] : null;
+  const emb = {
+    ref, empresa: document.getElementById('embEmpresa').value.trim()||'Synsai',
+    salidaSynsai: document.getElementById('embSalidaSynsai').value,
+    etdBusan: document.getElementById('embEtdBusan').value,
+    etaLB: document.getElementById('embEtaLB').value,
+    etaESE: document.getElementById('embEtaESE').value,
+    etaAlmacen: document.getElementById('embEtaAlmacen').value,
+    edificio: document.getElementById('embEdificio').value,
+    paso: parseInt(document.getElementById('embPaso').value)||0,
+    pns, updatedBy: user.name, updatedAt: new Date().toISOString(),
+    createdAt: existingEmb ? (existingEmb.createdAt || new Date().toISOString()) : new Date().toISOString()
+  };
+  if (existingEmb && existingEmb._docId) emb._docId = existingEmb._docId;
+
+  try {
+    if (db) {
+      if (emb._docId) {
+        await db.collection('planta1_papel_transito').doc(emb._docId).set(emb, {merge:true});
+      } else {
+        const docRef = await db.collection('planta1_papel_transito').add(emb);
+        emb._docId = docRef.id;
+      }
+    }
+    if (isEdit) {
+      embarques[_embEditId] = emb;
+    } else {
+      embarques.unshift(emb);
+    }
+    saveEmbarquesLocal();
+    cerrarModalEmbarque();
+    renderTransito();
+    updateDashTransito();
+    toast('✅ Embarque guardado','ok');
+  } catch(e) { toast('Error: '+e.message,'err'); }
+}
+window.guardarEmbarque = guardarEmbarque;
+
+function updateDashTransito() {
+  const el = document.getElementById('dashTransito');
+  if (!el) return;
+  if (!embarques.length) { el.style.display='none'; return; }
+  el.style.display='flex';
+  const activos = embarques.filter(function(e){ return (parseInt(e.paso)||0) < 7; });
+  const conEta = activos.filter(function(e){ return e.etaAlmacen; }).sort(function(a,b){ return (a.etaAlmacen||'').localeCompare(b.etaAlmacen||''); });
+  const prox = conEta[0];
+  document.getElementById('dashTransitoTxt').textContent = activos.length + ' embarque' + (activos.length!==1?'s':'') + ' en tránsito';
+  document.getElementById('dashTransitoSub').textContent = prox ? ('Próxima llegada: '+fmtFecha(prox.etaAlmacen)+' · '+prox.ref) : 'Sin ETA registrada';
+}
 
 // ── TOAST ──
 
