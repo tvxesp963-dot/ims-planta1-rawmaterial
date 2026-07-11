@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260712a";
+var APP_VERSION = "20260712c";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -478,6 +478,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
 
       <div style="font-size:10px;color:var(--text2);margin:8px 0 4px">Part Numbers en este embarque</div>
+      <div style="display:grid;grid-template-columns:1fr 60px 55px 55px 28px;gap:5px;margin-bottom:4px;font-size:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">
+        <div>Part Number</div><div style="text-align:right">Pallets</div><div style="text-align:right">Piezas</div><div style="text-align:right">Kg</div><div></div>
+      </div>
       <div id="embPnRows" style="margin-bottom:6px"></div>
       <button onclick="embAgregarRenglon()" style="width:100%;padding:8px;background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;color:var(--text2);font-size:11px;cursor:pointer;margin-bottom:.8rem">+ Agregar Part Number</button>
 
@@ -2086,6 +2089,7 @@ function renderTransito() {
       '<th rowspan="2" '+thL+'>Code No.</th>'+
       '<th rowspan="2" '+th+'>Plt Qty</th>'+
       '<th rowspan="2" '+th+'>Pc</th>'+
+      '<th rowspan="2" '+th+'>Kg</th>'+
       '<th rowspan="2" '+th+'>ETD Busan</th>'+
       '<th colspan="2" style="background:rgba(77,166,255,.12);color:var(--accent);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center">ETA</th>'+
       '<th colspan="3" style="background:rgba(29,158,117,.12);color:var(--green);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center">Eunsung</th>'+
@@ -2106,6 +2110,7 @@ function renderTransito() {
       '<td style="padding:6px 8px;border:1px solid var(--border);font-family:monospace;color:var(--accent);font-weight:600;cursor:pointer" onclick="verDetalleEmbarque('+f.embIdx+')">'+f.p.pn+'</td>'+
       '<td '+td+' style="font-weight:700">'+(parseFloat(f.p.plt)||0).toLocaleString()+'</td>'+
       '<td '+td+' style="color:var(--text2)">'+pzasEq.toLocaleString()+'</td>'+
+      '<td '+td+' style="color:var(--text2)">'+(parseFloat(f.p.kg)||0).toLocaleString()+'</td>'+
       '<td '+td+'>'+fmtFecha(f.emb.etdBusan)+'</td>'+
       '<td '+td+'>'+fmtFecha(f.emb.etaESE)+'</td>'+
       '<td '+td+'>'+fmtFecha(f.emb.etaLB)+'</td>'+
@@ -2146,20 +2151,77 @@ function verDetalleEmbarque(embIdx) {
 window.verDetalleEmbarque = verDetalleEmbarque;
 
 var _embPnCounter = 0;
-function embAgregarRenglon(pn,desc,plt,pzasPallet) {
+function embAgregarRenglon(pn,desc,plt,pzasPallet,kg) {
   _embPnCounter++;
   const id = 'embRow'+_embPnCounter;
   const wrap = document.getElementById('embPnRows');
   const div = document.createElement('div');
   div.id = id;
-  div.style.cssText = 'display:grid;grid-template-columns:1fr 70px 70px 28px;gap:5px;margin-bottom:5px;align-items:center';
+  div.dataset.pzasPallet = pzasPallet||0;
+  div.dataset.desc = desc||'';
+  div.style.cssText = 'margin-bottom:8px;position:relative';
   div.innerHTML =
-    '<input class="ref-in emb-pn" placeholder="PN" style="margin:0;font-family:monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" value="'+(pn||'')+'">'+
-    '<input class="ref-in emb-plt" type="number" step="0.1" placeholder="Pallets" style="margin:0" value="'+(plt||'')+'">'+
-    '<input class="ref-in emb-pzp" type="number" placeholder="Pzas/plt" style="margin:0" value="'+(pzasPallet||'')+'">'+
-    '<button onclick="document.getElementById(&quot;'+id+'&quot;).remove()" style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);border-radius:6px;color:#ff6b6b;font-size:14px;height:36px;cursor:pointer">✕</button>';
+    '<div style="display:grid;grid-template-columns:1fr 60px 55px 55px 28px;gap:5px;align-items:center">'+
+      '<div style="position:relative">'+
+        '<input class="ref-in emb-pn" placeholder="Buscar PN..." style="margin:0;font-family:monospace;text-transform:uppercase" '+
+          'oninput="this.value=this.value.toUpperCase();embBuscarPN(&quot;'+id+'&quot;,this.value)" '+
+          'onfocus="embBuscarPN(&quot;'+id+'&quot;,this.value)" '+
+          'onblur="setTimeout(function(){embCerrarSug(&quot;'+id+'&quot;)},200)" value="'+(pn||'')+'">'+
+        '<div id="'+id+'_sug" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;margin-top:3px;max-height:150px;overflow-y:auto;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.4)"></div>'+
+      '</div>'+
+      '<input class="ref-in emb-plt" type="number" step="0.1" placeholder="Pallets" style="margin:0" oninput="embRecalcPc(&quot;'+id+'&quot;)" value="'+(plt||'')+'">'+
+      '<div class="emb-pc" id="'+id+'_pc" style="text-align:right;font-size:11px;color:var(--text2);padding:8px 4px">'+Math.round((parseFloat(plt)||0)*(parseFloat(pzasPallet)||0)).toLocaleString()+'</div>'+
+      '<input class="ref-in emb-kg" type="number" step="0.1" placeholder="Kg" style="margin:0" value="'+(kg||'')+'">'+
+      '<button onclick="document.getElementById(&quot;'+id+'&quot;).remove()" style="background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.3);border-radius:6px;color:#ff6b6b;font-size:14px;height:36px;cursor:pointer">✕</button>'+
+    '</div>'+
+    '<div id="'+id+'_desc" style="font-size:9px;color:var(--text2);margin-top:2px;padding-left:2px">'+(desc?(desc+' · '+(pzasPallet||0)+' pzas/plt'):'')+'</div>';
   wrap.appendChild(div);
 }
+
+function embBuscarPN(rowId, q) {
+  const sugEl = document.getElementById(rowId+'_sug');
+  if (!sugEl) return;
+  q = (q||'').trim().toUpperCase();
+  if (q.length < 2) { sugEl.style.display='none'; return; }
+  const uniq = {};
+  items.forEach(function(i){ if(!uniq[i.pn] && (i.pn||'').toUpperCase().includes(q)) uniq[i.pn]=i; });
+  const matches = Object.values(uniq).slice(0,8);
+  if (!matches.length) { sugEl.innerHTML='<div style="padding:8px 10px;font-size:10px;color:var(--text2)">Sin coincidencias en inventario</div>'; sugEl.style.display='block'; return; }
+  sugEl.innerHTML = matches.map(function(i){
+    return '<div onmousedown="embSeleccionarPN(&quot;'+rowId+'&quot;,&quot;'+i.pn+'&quot;)" style="padding:7px 10px;font-size:10px;cursor:pointer;border-bottom:1px solid var(--border)">'+
+      '<div style="font-weight:600;color:var(--accent);font-family:monospace">'+i.pn+'</div>'+
+      '<div style="color:var(--text2);font-size:9px">'+(i.desc||'')+' · '+(i.pzasPallet||0)+' pzas/plt</div>'+
+    '</div>';
+  }).join('');
+  sugEl.style.display = 'block';
+}
+window.embBuscarPN = embBuscarPN;
+
+function embSeleccionarPN(rowId, pn) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const match = items.find(function(i){ return i.pn===pn; });
+  row.querySelector('.emb-pn').value = pn;
+  row.dataset.pzasPallet = match ? (match.pzasPallet||0) : 0;
+  row.dataset.desc = match ? (match.desc||'') : '';
+  document.getElementById(rowId+'_desc').textContent = match ? (match.desc+' · '+(match.pzasPallet||0)+' pzas/plt') : 'PN no encontrado en inventario';
+  embCerrarSug(rowId);
+  embRecalcPc(rowId);
+}
+window.embSeleccionarPN = embSeleccionarPN;
+
+function embCerrarSug(rowId) { const s=document.getElementById(rowId+'_sug'); if(s) s.style.display='none'; }
+window.embCerrarSug = embCerrarSug;
+
+function embRecalcPc(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const plt = parseFloat(row.querySelector('.emb-plt').value)||0;
+  const pzasPallet = parseFloat(row.dataset.pzasPallet)||0;
+  const pcEl = document.getElementById(rowId+'_pc');
+  if (pcEl) pcEl.textContent = Math.round(plt*pzasPallet).toLocaleString();
+}
+window.embRecalcPc = embRecalcPc;
 
 function abrirNuevoEmbarque() {
   if (!user || user.role!=='admin') { toast('Solo admins','err'); return; }
@@ -2196,7 +2258,7 @@ function abrirEditarEmbarque(idx) {
   document.getElementById('embEdificio').value = emb.edificio||'P1';
   document.getElementById('embPaso').value = String(emb.paso||0);
   document.getElementById('embPnRows').innerHTML = '';
-  (emb.pns||[]).forEach(function(p){ embAgregarRenglon(p.pn,p.desc,p.plt,p.pzasPallet); });
+  (emb.pns||[]).forEach(function(p){ embAgregarRenglon(p.pn,p.desc,p.plt,p.pzasPallet,p.kg); });
   if (!(emb.pns||[]).length) embAgregarRenglon();
   document.getElementById('modalEmbarque').style.display = 'flex';
 }
@@ -2213,9 +2275,10 @@ async function guardarEmbarque() {
   const pns = pnRows.map(function(row){
     const pn = row.querySelector('.emb-pn').value.trim().toUpperCase();
     const plt = parseFloat(row.querySelector('.emb-plt').value)||0;
-    const pzasPallet = parseFloat(row.querySelector('.emb-pzp').value)||0;
+    const kg = parseFloat(row.querySelector('.emb-kg').value)||0;
+    const pzasPallet = parseFloat(row.dataset.pzasPallet)||0;
     const existing = items.find(function(i){ return i.pn===pn; });
-    return {pn, desc: existing?existing.desc:'', plt, pzasPallet};
+    return {pn, desc: existing?existing.desc:(row.dataset.desc||''), plt, pzasPallet, kg};
   }).filter(function(p){ return p.pn; });
   if (!pns.length) { toast('Agrega al menos un Part Number','err'); return; }
 
