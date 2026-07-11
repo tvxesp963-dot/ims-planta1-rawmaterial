@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260712c";
+var APP_VERSION = "20260712e";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -2081,8 +2081,8 @@ function renderTransito() {
   if (!filas.length) { tabla.innerHTML=''; if(empty) empty.style.display='block'; return; }
   if (empty) empty.style.display = 'none';
 
-  const th = 'style="background:var(--bg3);color:var(--text2);font-size:9px;padding:6px 8px;border:1px solid var(--border);text-align:center"';
-  const thL = 'style="background:var(--bg3);color:var(--text2);font-size:9px;padding:6px 8px;border:1px solid var(--border);text-align:left"';
+  const th = 'style="background:var(--bg3);color:var(--text2);font-size:9px;padding:6px 8px;border:1px solid var(--border);text-align:center;text-transform:uppercase;letter-spacing:.03em"';
+  const thL = 'style="background:var(--bg3);color:var(--text2);font-size:9px;padding:6px 8px;border:1px solid var(--border);text-align:left;text-transform:uppercase;letter-spacing:.03em"';
   let head =
     '<thead><tr>'+
       '<th rowspan="2" '+th+'>No.</th>'+
@@ -2091,8 +2091,8 @@ function renderTransito() {
       '<th rowspan="2" '+th+'>Pc</th>'+
       '<th rowspan="2" '+th+'>Kg</th>'+
       '<th rowspan="2" '+th+'>ETD Busan</th>'+
-      '<th colspan="2" style="background:rgba(77,166,255,.12);color:var(--accent);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center">ETA</th>'+
-      '<th colspan="3" style="background:rgba(29,158,117,.12);color:var(--green);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center">Eunsung</th>'+
+      '<th colspan="2" style="background:rgba(77,166,255,.12);color:var(--accent);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center;text-transform:uppercase;letter-spacing:.03em">ETA</th>'+
+      '<th colspan="3" style="background:rgba(29,158,117,.12);color:var(--green);font-size:9px;padding:5px 8px;border:1px solid var(--border);text-align:center;text-transform:uppercase;letter-spacing:.03em">Eunsung</th>'+
     '</tr><tr>'+
       '<th '+th+'>Ese port</th><th '+th+'>Lb port</th>'+
       '<th '+th+'>P1</th><th '+th+'>P5</th><th '+th+'>P6</th>'+
@@ -2155,6 +2155,11 @@ function embAgregarRenglon(pn,desc,plt,pzasPallet,kg) {
   _embPnCounter++;
   const id = 'embRow'+_embPnCounter;
   const wrap = document.getElementById('embPnRows');
+  // Si viene un PN pero sin piezas/pallet guardadas, buscar en inventario actual
+  if (pn && !pzasPallet) {
+    const match = items.find(function(i){ return i.pn===pn.toUpperCase(); });
+    if (match) { pzasPallet = match.pzasPallet||0; desc = desc || match.desc || ''; }
+  }
   const div = document.createElement('div');
   div.id = id;
   div.dataset.pzasPallet = pzasPallet||0;
@@ -2166,7 +2171,7 @@ function embAgregarRenglon(pn,desc,plt,pzasPallet,kg) {
         '<input class="ref-in emb-pn" placeholder="Buscar PN..." style="margin:0;font-family:monospace;text-transform:uppercase" '+
           'oninput="this.value=this.value.toUpperCase();embBuscarPN(&quot;'+id+'&quot;,this.value)" '+
           'onfocus="embBuscarPN(&quot;'+id+'&quot;,this.value)" '+
-          'onblur="setTimeout(function(){embCerrarSug(&quot;'+id+'&quot;)},200)" value="'+(pn||'')+'">'+
+          'onblur="setTimeout(function(){embCerrarSug(&quot;'+id+'&quot;);embValidarPNExacto(&quot;'+id+'&quot;);},200)" value="'+(pn||'')+'">'+
         '<div id="'+id+'_sug" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;margin-top:3px;max-height:150px;overflow-y:auto;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.4)"></div>'+
       '</div>'+
       '<input class="ref-in emb-plt" type="number" step="0.1" placeholder="Pallets" style="margin:0" oninput="embRecalcPc(&quot;'+id+'&quot;)" value="'+(plt||'')+'">'+
@@ -2212,6 +2217,26 @@ window.embSeleccionarPN = embSeleccionarPN;
 
 function embCerrarSug(rowId) { const s=document.getElementById(rowId+'_sug'); if(s) s.style.display='none'; }
 window.embCerrarSug = embCerrarSug;
+
+function embValidarPNExacto(rowId) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  const pnInput = row.querySelector('.emb-pn');
+  const pn = (pnInput.value||'').trim().toUpperCase();
+  if (!pn) return;
+  // Si ya tiene un match guardado con piezas/pallet, no hacer nada
+  if (parseFloat(row.dataset.pzasPallet) > 0) return;
+  const match = items.find(function(i){ return i.pn===pn; });
+  if (match) {
+    row.dataset.pzasPallet = match.pzasPallet||0;
+    row.dataset.desc = match.desc||'';
+    document.getElementById(rowId+'_desc').textContent = match.desc+' · '+(match.pzasPallet||0)+' pzas/plt';
+    embRecalcPc(rowId);
+  } else {
+    document.getElementById(rowId+'_desc').textContent = '⚠️ PN no encontrado en inventario — verifica el código';
+  }
+}
+window.embValidarPNExacto = embValidarPNExacto;
 
 function embRecalcPc(rowId) {
   const row = document.getElementById(rowId);
