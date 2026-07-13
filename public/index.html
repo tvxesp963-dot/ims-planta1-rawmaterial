@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260713a";
+var APP_VERSION = "20260713b";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -238,7 +238,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .empty{text-align:center;padding:2rem;color:var(--text2);font-size:12px}
 .divider{height:1px;background:var(--border);margin:.7rem 0}
 .qr-center{display:none;flex-direction:column;align-items:center;gap:.8rem}
-.qr-center.show{display:flex}
+.qr-center.show{display:flex.ims-lang-btn{background:var(--bg3);border:1px solid var(--border2);border-radius:5px;padding:2px 3px;cursor:pointer;opacity:.5;transition:all .2s;line-height:0}
+.ims-lang-btn:hover{opacity:.85;transform:scale(1.1)}
+.ims-lang-btn.active{opacity:1;border-color:var(--accent);box-shadow:0 0 6px rgba(77,166,255,.3)}
 </style>
 </head>
 <body>
@@ -247,19 +249,19 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:32px 28px;width:100%;max-width:340px;text-align:center">
     <div style="font-size:2.2rem;margin-bottom:8px">📦</div>
     <div style="font-size:1rem;font-weight:700;color:var(--accent);margin-bottom:3px">IMS · Planta 1</div>
-    <div style="font-size:.72rem;color:var(--text2);margin-bottom:20px">Inventario · Acceso restringido</div>
-    <input type="password" id="viewerPass" placeholder="Clave de acceso"
+    <div style="font-size:.72rem;color:var(--text2);margin-bottom:20px" id="t-viewerSub">Inventario · Acceso restringido</div>
+    <input type="password" id="viewerPass" placeholder="Clave de acceso" data-t-ph="ph_viewerPass"
       style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:9px;padding:11px 14px;font-size:.9rem;text-align:center;letter-spacing:2px;margin-bottom:10px;outline:none;box-sizing:border-box"
       onkeydown="if(event.key==='Enter')checkViewerPass()">
     <button onclick="checkViewerPass()"
       style="width:100%;padding:12px;background:var(--accent);color:#000;border:none;border-radius:9px;font-size:.85rem;font-weight:700;cursor:pointer">
-      🔓 Ver Inventario
+      <span id="t-viewerBtn">🔓 Ver Inventario</span>
     </button>
     <div id="viewerErr" style="display:none;margin-top:10px;background:#3d1a1a;color:var(--red);border:1px solid var(--red);border-radius:8px;padding:8px;font-size:.75rem">
-      ❌ Clave incorrecta
+      <span id="t-viewerErr">❌ Clave incorrecta</span>
     </div>
     <div style="margin-top:16px;font-size:.68rem;color:var(--text2)">
-      ¿Eres usuario registrado? <span onclick="showLogin()" style="color:var(--accent);cursor:pointer">Iniciar sesión</span>
+      <span id="t-viewerReg">¿Eres usuario registrado?</span> <span onclick="showLogin()" style="color:var(--accent);cursor:pointer" id="t-viewerLoginLink">Iniciar sesión</span>
     </div>
   </div>
 </div>
@@ -270,13 +272,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="lb-i">📦</div>
       <div><div class="lb-n">IMS · PLANTA 1 — PAPEL</div><div class="lb-s">Sistema de Control de Inventario</div></div>
     </div>
-    <div class="ls">Acceso con tu correo y contraseña</div>
-    <label class="fl">Correo electrónico</label>
-    <input class="fi" id="liEmail" type="email" placeholder="correo@empresa.com">
-    <label class="fl">Contraseña</label>
+    <div class="ls" id="t-loginSub">Acceso con tu correo y contraseña</div>
+    <label class="fl" id="t-lblCorreo">Correo electrónico</label>
+    <input class="fi" id="liEmail" type="email" placeholder="correo@empresa.com" data-t-ph="ph_correo">
+    <label class="fl" id="t-lblPass">Contraseña</label>
     <input class="fi" id="liPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
 
-    <button class="btn-l" onclick="doLogin()">Iniciar sesión</button>
+    <button class="btn-l" onclick="doLogin()" id="t-btnLogin">Iniciar sesión</button>
     <div class="le" id="loginErr"></div>
     <div class="fs"><span class="fsd" id="fbDot"></span><span id="fbTxt">Conectando con Firebase...</span></div>
   </div>
@@ -290,8 +292,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div style="font-size:10px;color:var(--text2)" id="tbDate"></div>
     </div>
     <div class="tb-r">
-      <div class="lp"><div class="ld"></div>EN VIVO</div>
-      <button id="btnReload" onclick="recargarDesdeFirebase()" title="Recargar datos desde Firebase" style="background:rgba(77,166,255,.12);border:1px solid rgba(77,166,255,.3);color:var(--accent);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer">🔄 Recargar</button>
+      <div style="display:flex;gap:3px;align-items:center;margin-right:2px">
+        <button class="ims-lang-btn" id="ims-lang-mx" onclick="setIMSLang('es')" title="Español"><img src="https://flagcdn.com/w40/mx.png" width="22" height="16" style="border-radius:2px;display:block" alt="MX"></button>
+        <button class="ims-lang-btn active" id="ims-lang-us" onclick="setIMSLang('en')" title="English"><img src="https://flagcdn.com/w40/us.png" width="22" height="16" style="border-radius:2px;display:block" alt="US"></button>
+        <button class="ims-lang-btn" id="ims-lang-kr" onclick="setIMSLang('ko')" title="한국어"><img src="https://flagcdn.com/w40/kr.png" width="22" height="16" style="border-radius:2px;display:block" alt="KR"></button>
+      </div>
+      <div class="lp"><div class="ld"></div><span id="t-envivo">EN VIVO</span></div>
+      <button id="btnReload" onclick="recargarDesdeFirebase()" title="Recargar datos desde Firebase" style="background:rgba(77,166,255,.12);border:1px solid rgba(77,166,255,.3);color:var(--accent);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;cursor:pointer"><span id="t-recargar">🔄 Recargar</span></button>
       <div class="uc"><div class="ua" id="uAv">OA</div><span style="font-size:10px;color:var(--text2)" id="uNm">–</span><span class="ur" id="uRl">–</span></div>
       <button class="btn-out" onclick="doLogout()">⏻</button>
     </div>
@@ -299,12 +306,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <div id="pgDash" class="page active">
     <div class="sg2">
-      <div class="sc bl"><div class="sc-l">Part Numbers</div><div class="sc-v" style="color:var(--accent)" id="dL">–</div><div class="sc-s">códigos únicos</div></div>
-      <div class="sc gr"><div class="sc-l">Pallets</div><div class="sc-v" style="color:var(--green)" id="dP">–</div><div class="sc-s" id="dPzas">– pzas</div></div>
-      <div class="sc am"><div class="sc-l">Valor USD</div><div class="sc-v" style="color:var(--amber)" id="dV">–</div><div class="sc-s">estimado</div></div>
-      <div class="sc cy"><div class="sc-l">Movs. hoy</div><div class="sc-v" style="color:var(--cyan)" id="dM">0</div><div class="sc-s" id="dMs">E:0 S:0 T:0</div></div>
+      <div class="sc bl"><div class="sc-l" id="t-kpiPN">Part Numbers</div><div class="sc-v" style="color:var(--accent)" id="dL">–</div><div class="sc-s" id="t-kpiPNsub">códigos únicos</div></div>
+      <div class="sc gr"><div class="sc-l" id="t-kpiPallets">Pallets</div><div class="sc-v" style="color:var(--green)" id="dP">–</div><div class="sc-s" id="dPzas">– pzas</div></div>
+      <div class="sc am"><div class="sc-l" id="t-kpiValor">Valor USD</div><div class="sc-v" style="color:var(--amber)" id="dV">–</div><div class="sc-s" id="t-kpiValorSub">estimado</div></div>
+      <div class="sc cy"><div class="sc-l" id="t-kpiMovs">Movs. hoy</div><div class="sc-v" style="color:var(--cyan)" id="dM">0</div><div class="sc-s" id="dMs">E:0 S:0 T:0</div></div>
     </div>
-    <div class="sh">Pallets por edificio</div>
+    <div class="sh" id="t-shEdif">Pallets por edificio</div>
     <div class="fc" id="edifStock">
       <div class="fr"><div class="ft2">P1</div><div class="fb-w"><div class="fb" id="bP1" style="width:0%;background:linear-gradient(90deg,#1a6fd4,#4da6ff)"></div></div><div class="fi2" id="fP1">–</div></div>
       <div class="fr"><div class="ft2">P5</div><div class="fb-w"><div class="fb" id="bP5" style="width:0%;background:linear-gradient(90deg,#00876a,#00e676)"></div></div><div class="fi2" id="fP5">–</div></div>
@@ -316,21 +323,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div id="dashTransitoTxt" style="font-size:11px;font-weight:600">–</div>
         <div id="dashTransitoSub" style="font-size:9px;color:var(--text2)">–</div>
       </div>
-      <div style="font-size:10px;color:var(--accent)">Ver todo ›</div>
+      <div style="font-size:10px;color:var(--accent)" id="t-verTodo">Ver todo ›</div>
     </div>
-    <div class="sh"><span class="mon-pulse"></span>Monitor stock mínimo</div>
+    <div class="sh"><span class="mon-pulse"></span><span id="t-shMonitor">Monitor stock mínimo</span></div>
     <div class="fc" id="monitorStockMin" style="padding:.7rem"></div>
-    <div class="sh">Últimos movimientos</div>
+    <div class="sh" id="t-shUltMovs">Últimos movimientos</div>
     <div id="dashMovs"></div>
   </div>
 
   <div id="pgInv" class="page">
     <div class="sw" style="display:flex;gap:8px;align-items:center">
       <div style="position:relative;flex:1">
-        <input class="si" id="invS" style="text-transform:uppercase" placeholder="Buscar Part Number..." oninput="this.value=this.value.toUpperCase();renderInv()" >
+        <input class="si" id="invS" style="text-transform:uppercase" placeholder="Buscar Part Number..." data-t-ph="ph_buscarPN" oninput="this.value=this.value.toUpperCase();renderInv()" >
         <span class="si-ic">🔍</span>
       </div>
-      <button onclick="startInvScan()" style="background:var(--accent);border:none;border-radius:10px;padding:8px 14px;color:#000;font-size:18px;cursor:pointer;flex-shrink:0" title="Escanear QR">📷</button>
+      <button onclick="startInvScan()" style="background:var(--accent);border:none;border-radius:10px;padding:8px 14px;color:#000;font-size:18px;cursor:pointer;flex-shrink:0" title="Escanear QR" data-t-title="title_scanQR">📷</button>
     </div>
     <!-- Scanner overlay para Inventario -->
     <div id="invScanPreview" style="display:none;position:relative;width:100%;aspect-ratio:4/3;max-height:260px;background:#000;border-radius:12px;overflow:hidden;margin-bottom:.6rem">
@@ -343,7 +350,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div class="ftabs" style="justify-content:space-between;align-items:center">
       <div style="display:flex;gap:5px;flex-wrap:wrap">
-        <div class="ft on" onclick="setFam('TODOS',this)">Todos</div>
+        <div class="ft on" onclick="setFam('TODOS',this)" id="t-filtroTodos">Todos</div>
         <div class="ft" onclick="setFam('PET FILM',this)">PET FILM</div>
         <div class="ft" onclick="setFam('CORRUGADO',this)">CORRUGADO</div>
         <div class="ft" onclick="setFam('SSGPR',this)">SSGPR</div>
@@ -352,29 +359,29 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="ft" onclick="setFam('SBS',this)">SBS</div>
         <div class="ft" onclick="setFam('CHIPBOARD',this)">CHIPBOARD</div>
       </div>
-      <button onclick="exportExcel()" style="background:var(--green2);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">↓ Excel</button>
+      <button onclick="exportExcel()" style="background:var(--green2);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif" id="t-btnExcel">↓ Excel</button>
     </div>
-    <div class="ir-head"><div>Part Number</div><div style="text-align:center">Familia</div><div style="text-align:center">Edificio</div><div style="text-align:right">Stock</div><div style="text-align:right">Precio USD</div></div>
+    <div class="ir-head"><div id="t-colPN">Part Number</div><div style="text-align:center" id="t-colFamilia">Familia</div><div style="text-align:center" id="t-colEdificio">Edificio</div><div style="text-align:right" id="t-colStock">Stock</div><div style="text-align:right" id="t-colPrecio">Precio USD</div></div>
     <div id="invList"></div>
   </div>
 
   <div id="pgMov" class="page">
-    <div class="sh">Tipo de movimiento</div>
+    <div class="sh" id="t-shTipoMov">Tipo de movimiento</div>
     <div class="ba-row">
-      <button class="ba ba-E" onclick="initMov('E');showMovGuide('E')"><div class="ba-i">⬇️</div>ENTRADA</button>
-      <button class="ba ba-S" onclick="initMov('S');showMovGuide('S')"><div class="ba-i">⬆️</div>SALIDA</button>
-      <button class="ba ba-T" onclick="initMov('T');showMovGuide('T')"><div class="ba-i">🔀</div>TRASLADO</button>
+      <button class="ba ba-E" onclick="initMov('E');showMovGuide('E')"><div class="ba-i">⬇️</div><span id="t-btnEntrada">ENTRADA</span></button>
+      <button class="ba ba-S" onclick="initMov('S');showMovGuide('S')"><div class="ba-i">⬆️</div><span id="t-btnSalida">SALIDA</span></button>
+      <button class="ba ba-T" onclick="initMov('T');showMovGuide('T')"><div class="ba-i">🔀</div><span id="t-btnTraslado">TRASLADO</span></button>
     </div>
     <!-- Guía visual de movimiento -->
     <div id="movGuide" style="display:none;margin:.4rem 0 .6rem 0;padding:9px 12px;border-radius:10px;font-size:10px;line-height:1.6;border-left:3px solid var(--accent);background:rgba(77,166,255,.06)"></div>
-    <div class="sw"><input class="si" id="movS" style="text-transform:uppercase" placeholder="Busca el Part Number..." oninput="this.value=this.value.toUpperCase();renderMovList()" ><span class="si-ic">🔍</span></div>
+    <div class="sw"><input class="si" id="movS" style="text-transform:uppercase" placeholder="Busca el Part Number..." data-t-ph="ph_buscaPN" oninput="this.value=this.value.toUpperCase();renderMovList()" ><span class="si-ic">🔍</span></div>
     <div id="movList" style="max-height:200px;overflow-y:auto;margin-bottom:.7rem"></div>
     <div class="mf" id="movForm">
       <div class="mf-tipo" id="mfTipo">ENTRADA</div>
       <div class="mf-pn" id="mfPN">–</div>
       <div class="mf-st" id="mfSt">Stock: –</div>
       <div class="divider"></div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Cantidad en pallets</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px" id="t-cantPallets">Cantidad en pallets</div>
       <div class="qrow">
         <button class="qb" onclick="adjQ(-1)">−1</button>
         <button class="qb" onclick="adjQ(-0.1)">−.1</button>
@@ -385,26 +392,26 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div id="mfDW">
         <div style="font-size:10px;color:var(--text2);margin:8px 0 4px" id="mfDestLabel">Edificio destino</div>
         <select class="loc-sel" id="mfDest">
-          <option value="P1">🏢 Edificio P1</option>
-          <option value="P5">🏢 Edificio P5</option>
-          <option value="P6">🏢 Edificio P6</option>
+          <option value="P1" id="t-optP1">🏢 Edificio P1</option>
+          <option value="P5" id="t-optP5">🏢 Edificio P5</option>
+          <option value="P6" id="t-optP6">🏢 Edificio P6</option>
         </select>
       </div>
-      <input class="ref-in" id="mfRef" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" placeholder="Referencia / OC (opcional)">
-      <button class="btn-conf" id="mfBtn" onclick="doMov()">✓ CONFIRMAR</button>
+      <input class="ref-in" id="mfRef" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase" placeholder="Referencia / OC (opcional)" data-t-ph="ph_referencia">
+      <button class="btn-conf" id="mfBtn" onclick="doMov()"><span id="t-btnConfirmar">✓ CONFIRMAR</span></button>
     </div>
   </div>
 
   <div id="pgTraz" class="page">
-    <div class="sw"><input class="si" id="trazS" style="text-transform:uppercase" placeholder="Buscar Part Number para rastrear..." oninput="this.value=this.value.toUpperCase();renderTraz()" ><span class="si-ic">🔍</span></div>
-    <div id="trazResult"><div class="empty">🗺️<br>Escribe un Part Number para rastrear</div></div>
-    <div class="sh">Mapa de planta</div>
+    <div class="sw"><input class="si" id="trazS" style="text-transform:uppercase" placeholder="Buscar Part Number para rastrear..." data-t-ph="ph_rastrear" oninput="this.value=this.value.toUpperCase();renderTraz()" ><span class="si-ic">🔍</span></div>
+    <div id="trazResult"><div class="empty">🗺️<br><span id="t-trazEmpty">Escribe un Part Number para rastrear</span></div></div>
+    <div class="sh" id="t-shMapa">Mapa de planta</div>
     <div class="lg" id="locMap"></div>
   </div>
 
   <div id="pgQR" class="page">
-    <div class="sh">Generar código QR</div>
-    <div class="sw"><input class="si" id="qrS" style="text-transform:uppercase" placeholder="Buscar Part Number..." oninput="this.value=this.value.toUpperCase();renderQRList()" ><span class="si-ic">🔍</span></div>
+    <div class="sh" id="t-shGenQR">Generar código QR</div>
+    <div class="sw"><input class="si" id="qrS" style="text-transform:uppercase" placeholder="Buscar Part Number..." data-t-ph="ph_buscarPN2" oninput="this.value=this.value.toUpperCase();renderQRList()" ><span class="si-ic">🔍</span></div>
     <div id="qrList" style="max-height:200px;overflow-y:auto;margin-bottom:.8rem"></div>
     <div class="qr-center" id="qrCenter">
       <div style="text-align:center">
@@ -413,39 +420,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div id="qrCanvas" style="background:#fff;padding:12px;border-radius:12px;box-shadow:0 0 24px rgba(77,166,255,.15)"></div>
       <div style="display:flex;gap:.6rem">
-        <button style="padding:9px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:12px;cursor:pointer" onclick="shareQR()">📤 Compartir</button>
-        <button style="padding:9px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:12px;cursor:pointer" onclick="window.print()">🖨️ Imprimir</button>
+        <button style="padding:9px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:12px;cursor:pointer" onclick="shareQR()"><span id="t-btnCompartir">📤 Compartir</span></button>
+        <button style="padding:9px 16px;border-radius:8px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-size:12px;cursor:pointer" onclick="window.print()"><span id="t-btnImprimir">🖨️ Imprimir</span></button>
       </div>
     </div>
   </div>
 
   <div id="pgHist" class="page">
     <div class="ftabs">
-      <div class="ft on" onclick="setHistF('TODOS',this)">Todos</div>
-      <div class="ft" onclick="setHistF('E',this)">⬇️ Entradas</div>
-      <div class="ft" onclick="setHistF('S',this)">⬆️ Salidas</div>
-      <div class="ft" onclick="setHistF('T',this)">🔀 Traslados</div>
+      <div class="ft on" onclick="setHistF('TODOS',this)" id="t-histTodos">Todos</div>
+      <div class="ft" onclick="setHistF('E',this)"><span id="t-histEntradas">⬇️ Entradas</span></div>
+      <div class="ft" onclick="setHistF('S',this)"><span id="t-histSalidas">⬆️ Salidas</span></div>
+      <div class="ft" onclick="setHistF('T',this)"><span id="t-histTraslados">🔀 Traslados</span></div>
     </div>
-    <div class="sw"><input class="si" id="histS" style="text-transform:uppercase" placeholder="Buscar por PN..." oninput="this.value=this.value.toUpperCase();renderHist()" ><span class="si-ic">🔍</span></div>
+    <div class="sw"><input class="si" id="histS" style="text-transform:uppercase" placeholder="Buscar por PN..." data-t-ph="ph_buscarPNhist" oninput="this.value=this.value.toUpperCase();renderHist()" ><span class="si-ic">🔍</span></div>
     <div id="histList"></div>
   </div>
 
 <div id="pgPlan" class="page">
   <div id="planEmpty" style="padding:3rem;text-align:center;color:var(--text2)">
     <div style="font-size:40px;margin-bottom:1rem">⚙️</div>
-    <div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:.5rem">Plan de máquinas — próximamente</div>
-    <div style="font-size:13px;margin-bottom:1rem">Este módulo se está preparando para dar seguimiento a las máquinas de producción de Planta 1.</div>
+    <div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:.5rem" id="t-planTitulo">Plan de máquinas — próximamente</div>
+    <div style="font-size:13px;margin-bottom:1rem" id="t-planDesc">Este módulo se está preparando para dar seguimiento a las máquinas de producción de Planta 1.</div>
   </div>
 </div>
 
   <div id="pgTransito" class="page">
     <div class="sh" style="display:flex;justify-content:space-between;align-items:center">
-      <span>🚢 Material en tránsito</span>
-      <button id="btnNuevoEmbarque" onclick="abrirNuevoEmbarque()" style="display:none;background:rgba(77,166,255,.15);border:1px solid rgba(77,166,255,.3);border-radius:8px;color:var(--accent);font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer">+ Nuevo embarque</button>
+      <span id="t-shTransito">🚢 Material en tránsito</span>
+      <button id="btnNuevoEmbarque" onclick="abrirNuevoEmbarque()" style="display:none;background:rgba(77,166,255,.15);border:1px solid rgba(77,166,255,.3);border-radius:8px;color:var(--accent);font-size:11px;font-weight:600;padding:6px 10px;cursor:pointer"><span id="t-btnNuevoEmb">+ Nuevo embarque</span></button>
     </div>
     <div id="transitoEmpty" style="display:none;padding:2rem;text-align:center;color:var(--text2)">
       <div style="font-size:36px;margin-bottom:.6rem">🚢</div>
-      <div style="font-size:13px">Sin embarques en tránsito</div>
+      <div style="font-size:13px" id="t-sinEmbarques">Sin embarques en tránsito</div>
     </div>
     <div style="overflow-x:auto"><table id="transitoTabla" style="border-collapse:collapse;font-size:10px;width:100%;white-space:nowrap"></table></div>
     <div id="transitoDetalle" style="display:none;margin-top:.7rem"></div>
@@ -460,106 +467,106 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Referencia / Contenedor</div><input id="embRef" class="ref-in" style="margin:0;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" placeholder="SYN-0451"></div>
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Empresa</div><input id="embEmpresa" class="ref-in" style="margin:0" value="Synsai"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-embRefLbl">Referencia / Contenedor</div><input id="embRef" class="ref-in" style="margin:0;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" placeholder="SYN-0451"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-embEmpresaLbl">Empresa</div><input id="embEmpresa" class="ref-in" style="margin:0" value="Synsai"></div>
       </div>
 
-      <div style="font-size:10px;color:var(--text2);margin:8px 0 4px">Part Numbers en este embarque</div>
+      <div style="font-size:10px;color:var(--text2);margin:8px 0 4px" id="t-embPnsLbl">Part Numbers en este embarque</div>
       <div style="display:grid;grid-template-columns:1fr 60px 55px 55px 28px;gap:5px;margin-bottom:4px;font-size:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em">
-        <div>Part Number</div><div style="text-align:right">Pallets</div><div style="text-align:right">Piezas</div><div style="text-align:right">Kg</div><div></div>
+        <div id="t-embColPN">Part Number</div><div style="text-align:right" id="t-embColPlt">Pallets</div><div style="text-align:right" id="t-embColPzas">Piezas</div><div style="text-align:right" id="t-embColKg">Kg</div><div></div>
       </div>
       <div id="embPnRows" style="margin-bottom:6px"></div>
-      <button onclick="embAgregarRenglon()" style="width:100%;padding:8px;background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;color:var(--text2);font-size:11px;cursor:pointer;margin-bottom:.8rem">+ Agregar Part Number</button>
+      <button onclick="embAgregarRenglon()" style="width:100%;padding:8px;background:var(--bg3);border:1px dashed var(--border2);border-radius:8px;color:var(--text2);font-size:11px;cursor:pointer;margin-bottom:.8rem" id="t-btnAgregarPN">+ Agregar Part Number</button>
 
-      <div style="font-size:11px;font-weight:600;color:#4DA6FF;letter-spacing:.6px;margin:10px 0 6px">📅 FECHAS ETD / ETA</div>
+      <div style="font-size:11px;font-weight:600;color:#4DA6FF;letter-spacing:.6px;margin:10px 0 6px" id="t-embFechasLbl">📅 FECHAS ETD / ETA</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Salida Synsai (Corea)</div><input id="embSalidaSynsai" type="date" class="ref-in" style="margin:0"></div>
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETD Puerto Busan (zarpe)</div><input id="embEtdBusan" type="date" class="ref-in" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-embSalidaLbl">Salida Synsai (Corea)</div><input id="embSalidaSynsai" type="date" class="ref-in" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-embEtdLbl">ETD Puerto Busan (zarpe)</div><input id="embEtdBusan" type="date" class="ref-in" style="margin:0"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:.6rem">
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETA Long Beach</div><input id="embEtaLB" type="date" class="ref-in" style="margin:0"></div>
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETA Ensenada</div><input id="embEtaESE" type="date" class="ref-in" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-embLBLbl">ETA Long Beach</div><input id="embEtaLB" type="date" class="ref-in" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-embESELbl">ETA Ensenada</div><input id="embEtaESE" type="date" class="ref-in" style="margin:0"></div>
       </div>
-      <div style="margin-bottom:.6rem"><div style="font-size:10px;color:var(--text2);margin-bottom:3px">ETA Almacén (Eunsung)</div><input id="embEtaAlmacen" type="date" class="ref-in" style="margin:0"></div>
+      <div style="margin-bottom:.6rem"><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-embAlmacenLbl">ETA Almacén (Eunsung)</div><input id="embEtaAlmacen" type="date" class="ref-in" style="margin:0"></div>
 
-      <div style="font-size:11px;font-weight:600;color:#00e676;letter-spacing:.6px;margin:10px 0 6px">🏢 DESTINO</div>
+      <div style="font-size:11px;font-weight:600;color:#00e676;letter-spacing:.6px;margin:10px 0 6px" id="t-embDestinoLbl">🏢 DESTINO</div>
       <select id="embEdificio" class="loc-sel" style="margin:0 0 .6rem">
         <option value="P1">🏢 Edificio P1</option>
         <option value="P5">🏢 Edificio P5</option>
         <option value="P6">🏢 Edificio P6</option>
       </select>
 
-      <div style="font-size:11px;font-weight:600;color:#FFBA00;letter-spacing:.6px;margin:10px 0 6px">📍 PASO ACTUAL</div>
+      <div style="font-size:11px;font-weight:600;color:#FFBA00;letter-spacing:.6px;margin:10px 0 6px" id="t-embPasoLbl">📍 PASO ACTUAL</div>
       <select id="embPaso" class="loc-sel" style="margin:0 0 1rem">
-        <option value="0">🏭 Salida Synsai (Corea)</option>
-        <option value="1">🚢 Zarpe Puerto Busan</option>
-        <option value="2">🌊 Tránsito marítimo</option>
-        <option value="3">⚓ Arribo Long Beach</option>
-        <option value="4">⚓ Arribo Ensenada</option>
-        <option value="5">📋 Aduana / Liberación</option>
-        <option value="6">🚛 Tránsito terrestre</option>
-        <option value="7">📦 Recibido en Almacén</option>
+        <option value="0" id="t-paso0">🏭 Salida Synsai (Corea)</option>
+        <option value="1" id="t-paso1">🚢 Zarpe Puerto Busan</option>
+        <option value="2" id="t-paso2">🌊 Tránsito marítimo</option>
+        <option value="3" id="t-paso3">⚓ Arribo Long Beach</option>
+        <option value="4" id="t-paso4">⚓ Arribo Ensenada</option>
+        <option value="5" id="t-paso5">📋 Aduana / Liberación</option>
+        <option value="6" id="t-paso6">🚛 Tránsito terrestre</option>
+        <option value="7" id="t-paso7">📦 Recibido en Almacén</option>
       </select>
 
       <div style="display:flex;gap:8px">
-        <button onclick="cerrarModalEmbarque()" style="flex:1;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:13px;cursor:pointer">Cancelar</button>
-        <button onclick="guardarEmbarque()" style="flex:2;padding:11px;background:var(--accent2);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">💾 Guardar embarque</button>
+        <button onclick="cerrarModalEmbarque()" style="flex:1;padding:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:13px;cursor:pointer" id="t-btnCancelar">Cancelar</button>
+        <button onclick="guardarEmbarque()" style="flex:2;padding:11px;background:var(--accent2);border:none;border-radius:9px;color:#fff;font-size:13px;font-weight:700;cursor:pointer" id="t-btnGuardarEmb">💾 Guardar embarque</button>
       </div>
     </div>
   </div>
 
   <div id="pgAdmin" class="page">
-    <div class="sh">Administración</div>
+    <div class="sh" id="t-shAdmin">Administración</div>
     <div class="ag">
-      <div class="ac" onclick="abrirConfigMonitor()" style="border-color:rgba(226,75,74,.4)"><div class="ac-i">⚙️</div><div class="ac-l">Stock mínimo</div><div class="ac-s">Configurar límite crítico</div></div>
-      <div class="ac" onclick="exportCSV()"><div class="ac-i">📊</div><div class="ac-l">Exportar CSV</div><div class="ac-s">Inventario completo</div></div>
-      <div class="ac" onclick="showKPIs()"><div class="ac-i">📈</div><div class="ac-l">KPIs</div><div class="ac-s">Métricas período</div></div>
-      <div class="ac" onclick="clearMovs()"><div class="ac-i">🗑️</div><div class="ac-l">Limpiar movs.</div><div class="ac-s">Solo Admin</div></div>
-      <div class="ac" onclick="migrateToFirestore()" style="border-color:#2ecc71"><div class="ac-i">☁️</div><div class="ac-l">Sync Firestore</div><div class="ac-s">Subir todos los items</div></div>
-      <div class="ac" onclick="cleanDuplicates()" style="border-color:#e74c3c"><div class="ac-i">🧹</div><div class="ac-l">Limpiar duplicados</div><div class="ac-s">Eliminar IDs viejos</div></div>
-      <div class="ac" onclick="resetStock()"><div class="ac-i">🔄</div><div class="ac-l">Reset stock</div><div class="ac-s">Volver a inicial</div></div>
-      <div class="ac" onclick="abrirImportPrecios()" style="border-color:rgba(255,179,0,.4)"><div class="ac-i">💲</div><div class="ac-l">Importar Precios</div><div class="ac-s">Desde Excel PN+Price</div></div>
+      <div class="ac" onclick="abrirConfigMonitor()" style="border-color:rgba(226,75,74,.4)"><div class="ac-i">⚙️</div><div class="ac-l" id="t-acStockMin">Stock mínimo</div><div class="ac-s" id="t-acStockMinSub">Configurar límite crítico</div></div>
+      <div class="ac" onclick="exportCSV()"><div class="ac-i">📊</div><div class="ac-l" id="t-acCSV">Exportar CSV</div><div class="ac-s" id="t-acCSVSub">Inventario completo</div></div>
+      <div class="ac" onclick="showKPIs()"><div class="ac-i">📈</div><div class="ac-l">KPIs</div><div class="ac-s" id="t-acKPIsSub">Métricas período</div></div>
+      <div class="ac" onclick="clearMovs()"><div class="ac-i">🗑️</div><div class="ac-l" id="t-acLimpiarMovs">Limpiar movs.</div><div class="ac-s" id="t-acSoloAdmin">Solo Admin</div></div>
+      <div class="ac" onclick="migrateToFirestore()" style="border-color:#2ecc71"><div class="ac-i">☁️</div><div class="ac-l">Sync Firestore</div><div class="ac-s" id="t-acSyncSub">Subir todos los items</div></div>
+      <div class="ac" onclick="cleanDuplicates()" style="border-color:#e74c3c"><div class="ac-i">🧹</div><div class="ac-l" id="t-acLimpiarDup">Limpiar duplicados</div><div class="ac-s" id="t-acLimpiarDupSub">Eliminar IDs viejos</div></div>
+      <div class="ac" onclick="resetStock()"><div class="ac-i">🔄</div><div class="ac-l" id="t-acReset">Reset stock</div><div class="ac-s" id="t-acResetSub">Volver a inicial</div></div>
+      <div class="ac" onclick="abrirImportPrecios()" style="border-color:rgba(255,179,0,.4)"><div class="ac-i">💲</div><div class="ac-l" id="t-acImportPrecios">Importar Precios</div><div class="ac-s" id="t-acImportPreciosSub">Desde Excel PN+Price</div></div>
     </div>
-    <div class="sh">Usuarios IMS</div>
+    <div class="sh" id="t-shUsuarios">Usuarios IMS</div>
     <div class="card" style="padding:.9rem">
-      <h3 style="font-size:.8rem;margin-bottom:8px">👥 Usuarios (<span id="ims-user-count">0</span>)</h3>
+      <h3 style="font-size:.8rem;margin-bottom:8px"><span id="t-usuariosTitulo">👥 Usuarios</span> (<span id="ims-user-count">0</span>)</h3>
       <div id="ims-user-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px"></div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:.72rem">
           <thead><tr>
-            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Correo</th>
-            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Nombre</th>
-            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Rol</th>
-            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Planta</th>
-            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Estado</th>
-            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left">Acciones</th>
+            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left" id="t-thCorreo">Correo</th>
+            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left" id="t-thNombre">Nombre</th>
+            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left" id="t-thRol">Rol</th>
+            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left" id="t-thPlanta">Planta</th>
+            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left" id="t-thEstado">Estado</th>
+            <th style="background:var(--bg3);color:var(--text2);font-size:.6rem;padding:6px 8px;text-align:left" id="t-thAcciones">Acciones</th>
           </tr></thead>
           <tbody id="ims-users-table"></tbody>
         </table>
       </div>
     </div>
     <div class="card" style="padding:.9rem;margin-top:8px">
-      <h3 style="font-size:.8rem;margin-bottom:8px">➕ Agregar usuario — Planta 1</h3>
-      <div style="font-size:10px;color:var(--amber);padding:6px 10px;background:rgba(255,179,0,.08);border-radius:7px;margin-bottom:8px">Los usuarios creados aquí tendrán acceso solo a Planta 1 (Papel)</div>
+      <h3 style="font-size:.8rem;margin-bottom:8px" id="t-agregarUsuarioTitulo">➕ Agregar usuario — Planta 1</h3>
+      <div style="font-size:10px;color:var(--amber);padding:6px 10px;background:rgba(255,179,0,.08);border-radius:7px;margin-bottom:8px" id="t-avisoUsuario">Los usuarios creados aquí tendrán acceso solo a Planta 1 (Papel)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-        <input class="ref-in" id="nuEmail" placeholder="correo@ejemplo.com" type="email" style="margin:0">
-        <input class="ref-in" id="nuNombre" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;margin:0" placeholder="NOMBRE COMPLETO">
+        <input class="ref-in" id="nuEmail" placeholder="correo@ejemplo.com" type="email" style="margin:0" data-t-ph="ph_correoEj">
+        <input class="ref-in" id="nuNombre" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;margin:0" placeholder="NOMBRE COMPLETO" data-t-ph="ph_nombreCompleto">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-        <input class="ref-in" id="nuPass" placeholder="Contraseña (mín. 6)" type="password" style="margin:0">
+        <input class="ref-in" id="nuPass" placeholder="Contraseña (mín. 6)" type="password" style="margin:0" data-t-ph="ph_passMin">
         <select class="loc-sel" id="nuRol" style="margin:0">
           <option value="admin">Admin</option>
           <option value="operador" selected>Operador</option>
           <option value="viewer">Viewer</option>
         </select>
       </div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:4px">Plantas a las que tendrá acceso</div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:4px" id="t-plantasAcceso">Plantas a las que tendrá acceso</div>
       <div style="display:flex;gap:10px;margin-bottom:10px;padding:8px 10px;background:var(--bg3);border-radius:8px">
         <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="nuPlantaP1" checked style="width:15px;height:15px"> P1</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="nuPlantaP3" style="width:15px;height:15px"> P3</label>
         <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer"><input type="checkbox" id="nuPlantaP4" style="width:15px;height:15px"> P4</label>
       </div>
-      <button class="btn-conf bc-E" onclick="addImsUser()">+ Agregar usuario</button>
+      <button class="btn-conf bc-E" onclick="addImsUser()" id="t-btnAgregarUsuario">+ Agregar usuario</button>
     </div>
     <div class="sh">Firebase</div>
     <div class="card">
@@ -570,30 +577,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div style="font-size:11px;color:var(--text2)">Colección IMS: planta1_papel_inventario · Planta: P1 PAPEL</div>
       <div style="font-size:11px;color:var(--text2);margin-top:4px">Colecciones MES protegidas: causas_paro · registros · targets · usuarios</div>
     </div>
-    <div class="sh">Agregar Part Number</div>
+    <div class="sh" id="t-shAgregarPN">Agregar Part Number</div>
     <div class="card" style="padding:.9rem">
       <div style="padding:8px 10px;background:rgba(77,166,255,.07);border-radius:8px;border-left:3px solid var(--accent);font-size:10px;color:var(--text2);margin-bottom:.8rem;line-height:1.5">
-        💡 <b style="color:var(--text)">Un PN puede tener varias descripciones.</b><br>
+        <span id="t-infoPN">💡 <b style="color:var(--text)">Un PN puede tener varias descripciones.</b><br>
         La llave única es <b style="color:var(--accent)">PN + Descripción</b> juntos.<br>
-        Ej: ES69-76001P puede existir en P5 y en P6 simultáneamente — cada edificio es una línea distinta.
+        Ej: ES69-76001P puede existir en P5 y en P6 simultáneamente — cada edificio es una línea distinta.</span>
       </div>
       <div style="margin-bottom:.6rem">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:3px">PN * 11 chars</div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-lblPN11">PN * 11 chars</div>
         <input id="npPN" class="ref-in" maxlength="20" placeholder="ES69-XXXXXX" oninput="this.value=this.value.toUpperCase();npCheckVariantes()" style="margin:0;font-family:monospace">
         <div id="npVariantesHint" style="font-size:9px;color:var(--accent);margin-top:3px;min-height:12px"></div>
       </div>
       <div style="margin-bottom:.6rem">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Familia</div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-lblFamilia">Familia</div>
         <select id="npF" class="loc-sel" style="margin:0">
           <option>PET FILM</option><option>CORRUGADO</option><option>SSGPR</option><option>SRIV VE</option><option>SRRP</option><option>SBS</option><option>CHIPBOARD</option>
         </select>
       </div>
       <div style="margin-bottom:.6rem">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Descripción <span style="color:var(--accent)">(nueva variante)</span></div>
-        <input id="npD" class="ref-in" placeholder="DESCRIPCION" style="margin:0" oninput="this.value=this.value.toUpperCase()">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:3px"><span id="t-lblDescripcion">Descripción</span> <span style="color:var(--accent)" id="t-nuevaVariante">(nueva variante)</span></div>
+        <input id="npD" class="ref-in" placeholder="DESCRIPCION" style="margin:0" oninput="this.value=this.value.toUpperCase()" data-t-ph="ph_descripcion">
       </div>
       <div style="margin-bottom:.6rem">
-        <div style="font-size:10px;color:var(--text2);margin-bottom:3px">Edificio</div>
+        <div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-lblEdificio2">Edificio</div>
         <select id="npUb" class="loc-sel" style="margin:0">
           <option value="P1">🏢 Edificio P1</option>
           <option value="P5">🏢 Edificio P5</option>
@@ -601,30 +608,30 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         </select>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.6rem">
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Stock inicial (pallets)</div><input id="npS" class="ref-in" type="number" step="0.1" placeholder="0" style="margin:0"></div>
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Piezas por pallet</div><input id="npPP" class="ref-in" type="number" placeholder="0" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-lblStockIni">Stock inicial (pallets)</div><input id="npS" class="ref-in" type="number" step="0.1" placeholder="0" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-lblPzasPallet">Piezas por pallet</div><input id="npPP" class="ref-in" type="number" placeholder="0" style="margin:0"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr;gap:.5rem;margin-bottom:.8rem">
-        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px">Precio por pieza (USD)</div><input id="npP" class="ref-in" type="number" placeholder="0.0000" step="0.0001" style="margin:0"></div>
+        <div><div style="font-size:10px;color:var(--text2);margin-bottom:3px" id="t-lblPrecioPieza">Precio por pieza (USD)</div><input id="npP" class="ref-in" type="number" placeholder="0.0000" step="0.0001" style="margin:0"></div>
       </div>
-      <button class="btn-conf bc-E" onclick="doAddPN()">+ Agregar PN</button>
+      <button class="btn-conf bc-E" onclick="doAddPN()" id="t-btnAgregarPN2">+ Agregar PN</button>
     </div>
-    <div class="sh">Pendientes de precio</div>
-    <div class="table-w"><table class="dt"><thead><tr><th>Part Number</th><th>Fam.</th><th>Stock</th></tr></thead><tbody id="pendBody"></tbody></table></div>
+    <div class="sh" id="t-shPendientes">Pendientes de precio</div>
+    <div class="table-w"><table class="dt"><thead><tr><th id="t-thPN2">Part Number</th><th id="t-thFam2">Fam.</th><th id="t-thStock2">Stock</th></tr></thead><tbody id="pendBody"></tbody></table></div>
   </div>
 
   <!-- Botón regreso -->
   <div class="bnav">
-    <button id="backBtn" onclick="goBack()" style="display:none;background:transparent;border:none;color:var(--accent);font-size:11px;font-weight:600;padding:4px 8px;cursor:pointer;flex-shrink:0;white-space:nowrap">← Atrás</button>
-    <button class="bni on" onclick="goPage('pgDash',this)"><span class="bni-i">📊</span>Dash</button>
-    <button class="bni" onclick="goPage('pgInv',this)"><span class="bni-i">📦</span>Inv.</button>
-    <button class="bni" id="navMov" onclick="goPage('pgMov',this)"><span class="bni-i">🔄</span>Mov.</button>
-    <button class="bni" onclick="goPage('pgTraz',this)"><span class="bni-i">🗺️</span>Traz.</button>
+    <button id="backBtn" onclick="goBack()" style="display:none;background:transparent;border:none;color:var(--accent);font-size:11px;font-weight:600;padding:4px 8px;cursor:pointer;flex-shrink:0;white-space:nowrap"><span id="t-navAtras">← Atrás</span></button>
+    <button class="bni on" onclick="goPage('pgDash',this)"><span class="bni-i">📊</span><span id="t-navDash">Dash</span></button>
+    <button class="bni" onclick="goPage('pgInv',this)"><span class="bni-i">📦</span><span id="t-navInv">Inv.</span></button>
+    <button class="bni" id="navMov" onclick="goPage('pgMov',this)"><span class="bni-i">🔄</span><span id="t-navMov">Mov.</span></button>
+    <button class="bni" onclick="goPage('pgTraz',this)"><span class="bni-i">🗺️</span><span id="t-navTraz">Traz.</span></button>
     <button class="bni" onclick="goPage('pgQR',this)"><span class="bni-i">📷</span>QR</button>
-    <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span>Hist.</button>
-    <button class="bni" onclick="goPage('pgTransito',this)"><span class="bni-i">🚢</span>Tránsito</button>
-    <button class="bni" id="navPlan" onclick="goPage('pgPlan',this)"><span class="bni-i">⚙️</span>Plan</button>
-    <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span>Admin</button>
+    <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span><span id="t-navHist">Hist.</span></button>
+    <button class="bni" onclick="goPage('pgTransito',this)"><span class="bni-i">🚢</span><span id="t-navTransito">Tránsito</span></button>
+    <button class="bni" id="navPlan" onclick="goPage('pgPlan',this)"><span class="bni-i">⚙️</span><span id="t-navPlan">Plan</span></button>
+    <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span><span id="t-navAdmin">Admin</span></button>
   </div>
 </div>
 
@@ -1137,7 +1144,578 @@ function doLogout() {
   document.getElementById('loginScreen').style.display = 'none';
 }
 
+const IMS_TRANSLATIONS = {
+  es: {
+    t_viewerSub: "Inventario · Acceso restringido",
+    ph_viewerPass: "Clave de acceso",
+    t_viewerBtn: "🔓 Ver Inventario",
+    t_viewerErr: "❌ Clave incorrecta",
+    t_viewerReg: "¿Eres usuario registrado?",
+    t_viewerLoginLink: "Iniciar sesión",
+    t_loginSub: "Acceso con tu correo y contraseña",
+    t_lblCorreo: "Correo electrónico",
+    ph_correo: "correo@empresa.com",
+    t_lblPass: "Contraseña",
+    t_btnLogin: "Iniciar sesión",
+    t_envivo: "EN VIVO",
+    t_recargar: "🔄 Recargar",
+    t_kpiPN: "Part Numbers",
+    t_kpiPNsub: "códigos únicos",
+    t_kpiPallets: "Pallets",
+    t_kpiValor: "Valor USD",
+    t_kpiValorSub: "estimado",
+    t_kpiMovs: "Movs. hoy",
+    t_shEdif: "Pallets por edificio",
+    t_verTodo: "Ver todo ›",
+    t_shMonitor: "Monitor stock mínimo",
+    t_shUltMovs: "Últimos movimientos",
+    ph_buscarPN: "Buscar Part Number...",
+    title_scanQR: "Escanear QR",
+    t_filtroTodos: "Todos",
+    t_btnExcel: "↓ Excel",
+    t_colPN: "Part Number",
+    t_colFamilia: "Familia",
+    t_colEdificio: "Edificio",
+    t_colStock: "Stock",
+    t_colPrecio: "Precio USD",
+    t_shTipoMov: "Tipo de movimiento",
+    t_btnEntrada: "ENTRADA",
+    t_btnSalida: "SALIDA",
+    t_btnTraslado: "TRASLADO",
+    ph_buscaPN: "Busca el Part Number...",
+    t_cantPallets: "Cantidad en pallets",
+    ph_referencia: "Referencia / OC (opcional)",
+    t_btnConfirmar: "✓ CONFIRMAR",
+    t_optP1: "🏢 Edificio P1",
+    t_optP5: "🏢 Edificio P5",
+    t_optP6: "🏢 Edificio P6",
+    ph_rastrear: "Buscar Part Number para rastrear...",
+    t_trazEmpty: "Escribe un Part Number para rastrear",
+    t_shMapa: "Mapa de planta",
+    t_shGenQR: "Generar código QR",
+    ph_buscarPN2: "Buscar Part Number...",
+    t_btnCompartir: "📤 Compartir",
+    t_btnImprimir: "🖨️ Imprimir",
+    t_histTodos: "Todos",
+    t_histEntradas: "⬇️ Entradas",
+    t_histSalidas: "⬆️ Salidas",
+    t_histTraslados: "🔀 Traslados",
+    ph_buscarPNhist: "Buscar por PN...",
+    t_planTitulo: "Plan de máquinas — próximamente",
+    t_planDesc: "Este módulo se está preparando para dar seguimiento a las máquinas de producción de Planta 1.",
+    t_shTransito: "🚢 Material en tránsito",
+    t_btnNuevoEmb: "+ Nuevo embarque",
+    t_sinEmbarques: "Sin embarques en tránsito",
+    t_embRefLbl: "Referencia / Contenedor",
+    t_embEmpresaLbl: "Empresa",
+    t_embPnsLbl: "Part Numbers en este embarque",
+    t_embColPN: "Part Number",
+    t_embColPlt: "Pallets",
+    t_embColPzas: "Piezas",
+    t_embColKg: "Kg",
+    t_btnAgregarPN: "+ Agregar Part Number",
+    t_embFechasLbl: "📅 FECHAS ETD / ETA",
+    t_embSalidaLbl: "Salida Synsai (Corea)",
+    t_embEtdLbl: "ETD Puerto Busan (zarpe)",
+    t_embLBLbl: "ETA Long Beach",
+    t_embESELbl: "ETA Ensenada",
+    t_embAlmacenLbl: "ETA Almacén (Eunsung)",
+    t_embDestinoLbl: "🏢 DESTINO",
+    t_embPasoLbl: "📍 PASO ACTUAL",
+    t_paso0: "🏭 Salida Synsai (Corea)",
+    t_paso1: "🚢 Zarpe Puerto Busan",
+    t_paso2: "🌊 Tránsito marítimo",
+    t_paso3: "⚓ Arribo Long Beach",
+    t_paso4: "⚓ Arribo Ensenada",
+    t_paso5: "📋 Aduana / Liberación",
+    t_paso6: "🚛 Tránsito terrestre",
+    t_paso7: "📦 Recibido en Almacén",
+    t_btnCancelar: "Cancelar",
+    t_btnGuardarEmb: "💾 Guardar embarque",
+    t_shAdmin: "Administración",
+    t_acStockMin: "Stock mínimo",
+    t_acStockMinSub: "Configurar límite crítico",
+    t_acCSV: "Exportar CSV",
+    t_acCSVSub: "Inventario completo",
+    t_acKPIsSub: "Métricas período",
+    t_acLimpiarMovs: "Limpiar movs.",
+    t_acSoloAdmin: "Solo Admin",
+    t_acSyncSub: "Subir todos los items",
+    t_acLimpiarDup: "Limpiar duplicados",
+    t_acLimpiarDupSub: "Eliminar IDs viejos",
+    t_acReset: "Reset stock",
+    t_acResetSub: "Volver a inicial",
+    t_acImportPrecios: "Importar Precios",
+    t_acImportPreciosSub: "Desde Excel PN+Price",
+    t_shUsuarios: "Usuarios IMS",
+    t_usuariosTitulo: "👥 Usuarios",
+    t_thCorreo: "Correo",
+    t_thNombre: "Nombre",
+    t_thRol: "Rol",
+    t_thPlanta: "Planta",
+    t_thEstado: "Estado",
+    t_thAcciones: "Acciones",
+    t_agregarUsuarioTitulo: "➕ Agregar usuario — Planta 1",
+    t_avisoUsuario: "Los usuarios creados aquí tendrán acceso solo a Planta 1 (Papel)",
+    ph_correoEj: "correo@ejemplo.com",
+    ph_nombreCompleto: "NOMBRE COMPLETO",
+    ph_passMin: "Contraseña (mín. 6)",
+    t_plantasAcceso: "Plantas a las que tendrá acceso",
+    t_btnAgregarUsuario: "+ Agregar usuario",
+    t_shAgregarPN: "Agregar Part Number",
+    t_infoPN: "💡 <b style=\"color:var(--text)\">Un PN puede tener varias descripciones.</b><br>La llave única es <b style=\"color:var(--accent)\">PN + Descripción</b> juntos.<br>Ej: ES69-76001P puede existir en P5 y en P6 simultáneamente — cada edificio es una línea distinta.",
+    t_lblPN11: "PN * 11 chars",
+    t_lblFamilia: "Familia",
+    t_lblDescripcion: "Descripción",
+    t_nuevaVariante: "(nueva variante)",
+    ph_descripcion: "DESCRIPCION",
+    t_lblEdificio2: "Edificio",
+    t_lblStockIni: "Stock inicial (pallets)",
+    t_lblPzasPallet: "Piezas por pallet",
+    t_lblPrecioPieza: "Precio por pieza (USD)",
+    t_btnAgregarPN2: "+ Agregar PN",
+    t_shPendientes: "Pendientes de precio",
+    t_thPN2: "Part Number",
+    t_thFam2: "Fam.",
+    t_thStock2: "Stock",
+    t_navAtras: "← Atrás",
+    t_navDash: "Dash",
+    t_navInv: "Inv.",
+    t_navMov: "Mov.",
+    t_navTraz: "Traz.",
+    t_navHist: "Hist.",
+    t_navTransito: "Tránsito",
+    t_navPlan: "Plan",
+    t_navAdmin: "Admin",
+    lbl_stockActual: "Stock actual",
+    lbl_pzasEquiv: "Piezas equivalentes",
+    lbl_pzasPorPallet: "Piezas por pallet",
+    lbl_invInicial: "Inv. inicial",
+    lbl_entradas: "Entradas",
+    lbl_salidas: "Salidas",
+    lbl_precioUnit: "Precio unit. (pieza)",
+    lbl_valorTotal: "Valor total",
+    u_pallets: "pallets",
+    u_pzas: "pzas",
+    u_plt: "plt",
+    t_editarParte: "Editar Parte",
+    t_catalogo: "📋 CATÁLOGO",
+    t_lblPartNumber: "Part Number",
+    t_lblFamilia2: "Familia",
+    t_lblDescripcion2: "Descripción",
+    t_lblPzasPallet2: "Piezas por pallet",
+    t_lblEspec: "Especificación",
+    t_inventarioLbl: "📦 INVENTARIO",
+    t_lblInvInicial2: "Inv. inicial",
+    t_lblEntradas2: "Entradas",
+    t_lblSalidas2: "Salidas",
+    t_stockCalculado: "Stock actual (calculado)",
+    t_precioEstatusLbl: "💲 PRECIO Y ESTATUS",
+    t_lblPrecioUSD: "Precio USD",
+    t_lblEstatus: "Estatus",
+    t_lblEdificio3: "Edificio",
+    t_btnEliminar: "🗑️ Eliminar",
+    t_btnCancelar2: "Cancelar",
+    t_btnGuardar2: "💾 Guardar",
+  },
+  en: {
+    t_viewerSub: "Inventory · Restricted access",
+    ph_viewerPass: "Access code",
+    t_viewerBtn: "🔓 View Inventory",
+    t_viewerErr: "❌ Incorrect code",
+    t_viewerReg: "Are you a registered user?",
+    t_viewerLoginLink: "Log in",
+    t_loginSub: "Sign in with your email and password",
+    t_lblCorreo: "Email",
+    ph_correo: "email@company.com",
+    t_lblPass: "Password",
+    t_btnLogin: "Log in",
+    t_envivo: "LIVE",
+    t_recargar: "🔄 Reload",
+    t_kpiPN: "Part Numbers",
+    t_kpiPNsub: "unique codes",
+    t_kpiPallets: "Pallets",
+    t_kpiValor: "Value USD",
+    t_kpiValorSub: "estimated",
+    t_kpiMovs: "Moves today",
+    t_shEdif: "Pallets by building",
+    t_verTodo: "View all ›",
+    t_shMonitor: "Minimum stock monitor",
+    t_shUltMovs: "Recent movements",
+    ph_buscarPN: "Search Part Number...",
+    title_scanQR: "Scan QR",
+    t_filtroTodos: "All",
+    t_btnExcel: "↓ Excel",
+    t_colPN: "Part Number",
+    t_colFamilia: "Family",
+    t_colEdificio: "Building",
+    t_colStock: "Stock",
+    t_colPrecio: "Price USD",
+    t_shTipoMov: "Movement type",
+    t_btnEntrada: "IN",
+    t_btnSalida: "OUT",
+    t_btnTraslado: "TRANSFER",
+    ph_buscaPN: "Search for Part Number...",
+    t_cantPallets: "Quantity in pallets",
+    ph_referencia: "Reference / PO (optional)",
+    t_btnConfirmar: "✓ CONFIRM",
+    t_optP1: "🏢 Building P1",
+    t_optP5: "🏢 Building P5",
+    t_optP6: "🏢 Building P6",
+    ph_rastrear: "Search Part Number to trace...",
+    t_trazEmpty: "Type a Part Number to trace",
+    t_shMapa: "Plant map",
+    t_shGenQR: "Generate QR code",
+    ph_buscarPN2: "Search Part Number...",
+    t_btnCompartir: "📤 Share",
+    t_btnImprimir: "🖨️ Print",
+    t_histTodos: "All",
+    t_histEntradas: "⬇️ In",
+    t_histSalidas: "⬆️ Out",
+    t_histTraslados: "🔀 Transfers",
+    ph_buscarPNhist: "Search by PN...",
+    t_planTitulo: "Machine plan — coming soon",
+    t_planDesc: "This module is being prepared to track the production machines at Plant 1.",
+    t_shTransito: "🚢 Material in transit",
+    t_btnNuevoEmb: "+ New shipment",
+    t_sinEmbarques: "No shipments in transit",
+    t_embRefLbl: "Reference / Container",
+    t_embEmpresaLbl: "Company",
+    t_embPnsLbl: "Part Numbers in this shipment",
+    t_embColPN: "Part Number",
+    t_embColPlt: "Pallets",
+    t_embColPzas: "Pieces",
+    t_embColKg: "Kg",
+    t_btnAgregarPN: "+ Add Part Number",
+    t_embFechasLbl: "📅 ETD / ETA DATES",
+    t_embSalidaLbl: "Departure Synsai (Korea)",
+    t_embEtdLbl: "ETD Busan Port (departure)",
+    t_embLBLbl: "ETA Long Beach",
+    t_embESELbl: "ETA Ensenada",
+    t_embAlmacenLbl: "ETA Warehouse (Eunsung)",
+    t_embDestinoLbl: "🏢 DESTINATION",
+    t_embPasoLbl: "📍 CURRENT STEP",
+    t_paso0: "🏭 Departure Synsai (Korea)",
+    t_paso1: "🚢 Busan Port departure",
+    t_paso2: "🌊 Ocean transit",
+    t_paso3: "⚓ Arrival Long Beach",
+    t_paso4: "⚓ Arrival Ensenada",
+    t_paso5: "📋 Customs / Release",
+    t_paso6: "🚛 Ground transit",
+    t_paso7: "📦 Received at Warehouse",
+    t_btnCancelar: "Cancel",
+    t_btnGuardarEmb: "💾 Save shipment",
+    t_shAdmin: "Administration",
+    t_acStockMin: "Minimum stock",
+    t_acStockMinSub: "Configure critical limit",
+    t_acCSV: "Export CSV",
+    t_acCSVSub: "Full inventory",
+    t_acKPIsSub: "Period metrics",
+    t_acLimpiarMovs: "Clear moves",
+    t_acSoloAdmin: "Admin only",
+    t_acSyncSub: "Upload all items",
+    t_acLimpiarDup: "Clean duplicates",
+    t_acLimpiarDupSub: "Remove old IDs",
+    t_acReset: "Reset stock",
+    t_acResetSub: "Back to initial",
+    t_acImportPrecios: "Import Prices",
+    t_acImportPreciosSub: "From Excel PN+Price",
+    t_shUsuarios: "IMS Users",
+    t_usuariosTitulo: "👥 Users",
+    t_thCorreo: "Email",
+    t_thNombre: "Name",
+    t_thRol: "Role",
+    t_thPlanta: "Plant",
+    t_thEstado: "Status",
+    t_thAcciones: "Actions",
+    t_agregarUsuarioTitulo: "➕ Add user — Plant 1",
+    t_avisoUsuario: "Users created here will only have access to Plant 1 (Paper)",
+    ph_correoEj: "email@example.com",
+    ph_nombreCompleto: "FULL NAME",
+    ph_passMin: "Password (min. 6)",
+    t_plantasAcceso: "Plants they will have access to",
+    t_btnAgregarUsuario: "+ Add user",
+    t_shAgregarPN: "Add Part Number",
+    t_infoPN: "💡 <b style=\"color:var(--text)\">A PN can have several descriptions.</b><br>The unique key is <b style=\"color:var(--accent)\">PN + Description</b> together.<br>E.g.: ES69-76001P can exist in P5 and P6 simultaneously — each building is a separate line.",
+    t_lblPN11: "PN * 11 chars",
+    t_lblFamilia: "Family",
+    t_lblDescripcion: "Description",
+    t_nuevaVariante: "(new variant)",
+    ph_descripcion: "DESCRIPTION",
+    t_lblEdificio2: "Building",
+    t_lblStockIni: "Initial stock (pallets)",
+    t_lblPzasPallet: "Pieces per pallet",
+    t_lblPrecioPieza: "Price per piece (USD)",
+    t_btnAgregarPN2: "+ Add PN",
+    t_shPendientes: "Pending price",
+    t_thPN2: "Part Number",
+    t_thFam2: "Fam.",
+    t_thStock2: "Stock",
+    t_navAtras: "← Back",
+    t_navDash: "Dash",
+    t_navInv: "Inv.",
+    t_navMov: "Moves",
+    t_navTraz: "Trace",
+    t_navHist: "History",
+    t_navTransito: "Transit",
+    t_navPlan: "Plan",
+    t_navAdmin: "Admin",
+    lbl_stockActual: "Current stock",
+    lbl_pzasEquiv: "Equivalent pieces",
+    lbl_pzasPorPallet: "Pieces per pallet",
+    lbl_invInicial: "Initial inv.",
+    lbl_entradas: "In",
+    lbl_salidas: "Out",
+    lbl_precioUnit: "Unit price (piece)",
+    lbl_valorTotal: "Total value",
+    u_pallets: "pallets",
+    u_pzas: "pcs",
+    u_plt: "plt",
+    t_editarParte: "Edit Part",
+    t_catalogo: "📋 CATALOG",
+    t_lblPartNumber: "Part Number",
+    t_lblFamilia2: "Family",
+    t_lblDescripcion2: "Description",
+    t_lblPzasPallet2: "Pieces per pallet",
+    t_lblEspec: "Specification",
+    t_inventarioLbl: "📦 INVENTORY",
+    t_lblInvInicial2: "Initial inv.",
+    t_lblEntradas2: "In",
+    t_lblSalidas2: "Out",
+    t_stockCalculado: "Current stock (calculated)",
+    t_precioEstatusLbl: "💲 PRICE AND STATUS",
+    t_lblPrecioUSD: "Price USD",
+    t_lblEstatus: "Status",
+    t_lblEdificio3: "Building",
+    t_btnEliminar: "🗑️ Delete",
+    t_btnCancelar2: "Cancel",
+    t_btnGuardar2: "💾 Save",
+  },
+  ko: {
+    t_viewerSub: "재고 · 접근 제한",
+    ph_viewerPass: "접근 코드",
+    t_viewerBtn: "🔓 재고 보기",
+    t_viewerErr: "❌ 잘못된 코드",
+    t_viewerReg: "등록된 사용자입니까?",
+    t_viewerLoginLink: "로그인",
+    t_loginSub: "이메일과 비밀번호로 로그인",
+    t_lblCorreo: "이메일",
+    ph_correo: "email@company.com",
+    t_lblPass: "비밀번호",
+    t_btnLogin: "로그인",
+    t_envivo: "실시간",
+    t_recargar: "🔄 새로고침",
+    t_kpiPN: "품번",
+    t_kpiPNsub: "고유 코드",
+    t_kpiPallets: "파렛트",
+    t_kpiValor: "가치(USD)",
+    t_kpiValorSub: "추정",
+    t_kpiMovs: "오늘 이동",
+    t_shEdif: "건물별 파렛트",
+    t_verTodo: "전체 보기 ›",
+    t_shMonitor: "최소 재고 모니터",
+    t_shUltMovs: "최근 이동",
+    ph_buscarPN: "품번 검색...",
+    title_scanQR: "QR 스캔",
+    t_filtroTodos: "전체",
+    t_btnExcel: "↓ 엑셀",
+    t_colPN: "품번",
+    t_colFamilia: "분류",
+    t_colEdificio: "건물",
+    t_colStock: "재고",
+    t_colPrecio: "가격(USD)",
+    t_shTipoMov: "이동 유형",
+    t_btnEntrada: "입고",
+    t_btnSalida: "출고",
+    t_btnTraslado: "이송",
+    ph_buscaPN: "품번 검색...",
+    t_cantPallets: "파렛트 수량",
+    ph_referencia: "참조/발주번호 (선택)",
+    t_btnConfirmar: "✓ 확인",
+    t_optP1: "🏢 건물 P1",
+    t_optP5: "🏢 건물 P5",
+    t_optP6: "🏢 건물 P6",
+    ph_rastrear: "추적할 품번 검색...",
+    t_trazEmpty: "추적할 품번을 입력하세요",
+    t_shMapa: "공장 지도",
+    t_shGenQR: "QR 코드 생성",
+    ph_buscarPN2: "품번 검색...",
+    t_btnCompartir: "📤 공유",
+    t_btnImprimir: "🖨️ 인쇄",
+    t_histTodos: "전체",
+    t_histEntradas: "⬇️ 입고",
+    t_histSalidas: "⬆️ 출고",
+    t_histTraslados: "🔀 이송",
+    ph_buscarPNhist: "품번으로 검색...",
+    t_planTitulo: "기계 계획 — 준비 중",
+    t_planDesc: "이 모듈은 Planta 1의 생산 기계를 추적하기 위해 준비 중입니다.",
+    t_shTransito: "🚢 운송 중인 자재",
+    t_btnNuevoEmb: "+ 새 선적",
+    t_sinEmbarques: "운송 중인 선적 없음",
+    t_embRefLbl: "참조/컨테이너",
+    t_embEmpresaLbl: "회사",
+    t_embPnsLbl: "이 선적의 품번",
+    t_embColPN: "품번",
+    t_embColPlt: "파렛트",
+    t_embColPzas: "개수",
+    t_embColKg: "Kg",
+    t_btnAgregarPN: "+ 품번 추가",
+    t_embFechasLbl: "📅 출발/도착 예정일",
+    t_embSalidaLbl: "Synsai 출발 (한국)",
+    t_embEtdLbl: "부산항 출항 예정일",
+    t_embLBLbl: "Long Beach 도착 예정일",
+    t_embESELbl: "Ensenada 도착 예정일",
+    t_embAlmacenLbl: "창고 도착 예정일 (Eunsung)",
+    t_embDestinoLbl: "🏢 목적지",
+    t_embPasoLbl: "📍 현재 단계",
+    t_paso0: "🏭 Synsai 출발 (한국)",
+    t_paso1: "🚢 부산항 출항",
+    t_paso2: "🌊 해상 운송 중",
+    t_paso3: "⚓ Long Beach 도착",
+    t_paso4: "⚓ Ensenada 도착",
+    t_paso5: "📋 통관/반출",
+    t_paso6: "🚛 육상 운송 중",
+    t_paso7: "📦 창고 입고 완료",
+    t_btnCancelar: "취소",
+    t_btnGuardarEmb: "💾 선적 저장",
+    t_shAdmin: "관리",
+    t_acStockMin: "최소 재고",
+    t_acStockMinSub: "임계값 설정",
+    t_acCSV: "CSV 내보내기",
+    t_acCSVSub: "전체 재고",
+    t_acKPIsSub: "기간 지표",
+    t_acLimpiarMovs: "이동 기록 삭제",
+    t_acSoloAdmin: "관리자 전용",
+    t_acSyncSub: "전체 항목 업로드",
+    t_acLimpiarDup: "중복 항목 정리",
+    t_acLimpiarDupSub: "이전 ID 제거",
+    t_acReset: "재고 초기화",
+    t_acResetSub: "초기값으로 복원",
+    t_acImportPrecios: "가격 가져오기",
+    t_acImportPreciosSub: "엑셀에서 (품번+가격)",
+    t_shUsuarios: "IMS 사용자",
+    t_usuariosTitulo: "👥 사용자",
+    t_thCorreo: "이메일",
+    t_thNombre: "이름",
+    t_thRol: "역할",
+    t_thPlanta: "공장",
+    t_thEstado: "상태",
+    t_thAcciones: "작업",
+    t_agregarUsuarioTitulo: "➕ 사용자 추가 — Planta 1",
+    t_avisoUsuario: "여기서 생성된 사용자는 Planta 1(용지)에만 접근할 수 있습니다",
+    ph_correoEj: "email@example.com",
+    ph_nombreCompleto: "전체 이름",
+    ph_passMin: "비밀번호 (최소 6자)",
+    t_plantasAcceso: "접근 가능한 공장",
+    t_btnAgregarUsuario: "+ 사용자 추가",
+    t_shAgregarPN: "품번 추가",
+    t_infoPN: "💡 <b style=\"color:var(--text)\">하나의 품번은 여러 설명을 가질 수 있습니다.</b><br>고유 키는 <b style=\"color:var(--accent)\">품번 + 설명</b>의 조합입니다.<br>예: ES69-76001P는 P5와 P6에 동시에 존재할 수 있습니다 — 각 건물은 별도의 행입니다.",
+    t_lblPN11: "품번 * 11자",
+    t_lblFamilia: "분류",
+    t_lblDescripcion: "설명",
+    t_nuevaVariante: "(신규 변형)",
+    ph_descripcion: "설명",
+    t_lblEdificio2: "건물",
+    t_lblStockIni: "초기 재고 (파렛트)",
+    t_lblPzasPallet: "파렛트당 개수",
+    t_lblPrecioPieza: "개당 가격 (USD)",
+    t_btnAgregarPN2: "+ 품번 추가",
+    t_shPendientes: "가격 미입력 항목",
+    t_thPN2: "품번",
+    t_thFam2: "분류",
+    t_thStock2: "재고",
+    t_navAtras: "← 뒤로",
+    t_navDash: "대시보드",
+    t_navInv: "재고",
+    t_navMov: "이동",
+    t_navTraz: "추적",
+    t_navHist: "기록",
+    t_navTransito: "운송",
+    t_navPlan: "계획",
+    t_navAdmin: "관리",
+    lbl_stockActual: "현재 재고",
+    lbl_pzasEquiv: "환산 개수",
+    lbl_pzasPorPallet: "파렛트당 개수",
+    lbl_invInicial: "초기 재고",
+    lbl_entradas: "입고",
+    lbl_salidas: "출고",
+    lbl_precioUnit: "단가 (개당)",
+    lbl_valorTotal: "총 가치",
+    u_pallets: "파렛트",
+    u_pzas: "개",
+    u_plt: "plt",
+    t_editarParte: "부품 수정",
+    t_catalogo: "📋 카탈로그",
+    t_lblPartNumber: "품번",
+    t_lblFamilia2: "분류",
+    t_lblDescripcion2: "설명",
+    t_lblPzasPallet2: "파렛트당 개수",
+    t_lblEspec: "사양",
+    t_inventarioLbl: "📦 재고",
+    t_lblInvInicial2: "초기 재고",
+    t_lblEntradas2: "입고",
+    t_lblSalidas2: "출고",
+    t_stockCalculado: "현재 재고 (계산됨)",
+    t_precioEstatusLbl: "💲 가격 및 상태",
+    t_lblPrecioUSD: "가격 (USD)",
+    t_lblEstatus: "상태",
+    t_lblEdificio3: "건물",
+    t_btnEliminar: "🗑️ 삭제",
+    t_btnCancelar2: "취소",
+    t_btnGuardar2: "💾 저장",
+  },
+};
+
+// ── i18n ──
+let IMS_LANG = localStorage.getItem('ims1p-lang') || 'en';
+const IMS_HTML_KEYS = new Set(['t_infoPN']); // claves que contienen HTML (negritas, <br>)
+
+function tt(key){ return (IMS_TRANSLATIONS[IMS_LANG]||IMS_TRANSLATIONS.en)[key] || IMS_TRANSLATIONS.es[key] || key; }
+window.tt = tt;
+function t(key){ return tt(key); } // alias corto para uso en JS de renderizado
+
+function applyIMSTranslations(){
+  document.querySelectorAll('[id^="t-"]').forEach(function(el){
+    const key = el.id.replace(/-/g,'_');
+    const txt = tt(key);
+    if (IMS_HTML_KEYS.has(key)) el.innerHTML = txt; else el.textContent = txt;
+  });
+  document.querySelectorAll('[data-t-ph]').forEach(function(el){
+    el.setAttribute('placeholder', tt(el.dataset.tPh));
+  });
+  document.querySelectorAll('[data-t-title]').forEach(function(el){
+    el.setAttribute('title', tt(el.dataset.tTitle));
+  });
+  // Refrescar contenido dinámico que ya se haya renderizado
+  if (typeof updateDash==='function' && document.getElementById('dL')) updateDash();
+  if (typeof renderInv==='function') renderInv();
+  if (typeof renderTransito==='function') renderTransito();
+  if (typeof renderHist==='function') renderHist();
+}
+
+window.setIMSLang = function(lang){
+  IMS_LANG = lang;
+  localStorage.setItem('ims1p-lang', lang);
+  ['mx','us','kr'].forEach(function(id){ const el=document.getElementById('ims-lang-'+id); if(el) el.classList.remove('active'); });
+  const map = { es:'mx', en:'us', ko:'kr' };
+  const active = document.getElementById('ims-lang-'+map[lang]);
+  if (active) active.classList.add('active');
+  applyIMSTranslations();
+};
+
+function initIMSLangOnLoad(){
+  const saved = localStorage.getItem('ims1p-lang')||'en';
+  IMS_LANG = saved;
+  const map = { es:'mx', en:'us', ko:'kr' };
+  ['mx','us','kr'].forEach(function(id){ const el=document.getElementById('ims-lang-'+id); if(el) el.classList.remove('active'); });
+  const active = document.getElementById('ims-lang-'+map[saved]);
+  if (active) active.classList.add('active');
+  applyIMSTranslations();
+}
+window.initIMSLangOnLoad = initIMSLangOnLoad;
+
 function launch() {
+  initIMSLangOnLoad();
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('viewerScreen').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
@@ -1165,6 +1743,7 @@ function launch() {
 }
 
 // init on load
+initIMSLangOnLoad();
 initFirebase();
 if (user) {
   launch();
@@ -1339,15 +1918,15 @@ function openItem(idx) {
   document.getElementById('mSub').textContent = i.desc+' · '+i.familia;
   const hist = (i.historial||[]).slice(-5).reverse();
   document.getElementById('mBody').innerHTML =
-    '<div class="mrow"><span class="ml">Stock actual</span><span class="mv" style="color:var(--accent);font-size:16px">'+(parseFloat(i.actual)||0).toLocaleString()+' pallets</span></div>'+
-    '<div class="mrow"><span class="ml">Piezas equivalentes</span><span class="mv">'+Math.round((parseFloat(i.actual)||0)*(parseFloat(i.pzasPallet)||0)).toLocaleString()+' pzas</span></div>'+
-    '<div class="mrow"><span class="ml">Piezas por pallet</span><span class="mv">'+(parseFloat(i.pzasPallet)||0).toLocaleString()+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_stockActual')+'</span><span class="mv" style="color:var(--accent);font-size:16px">'+(parseFloat(i.actual)||0).toLocaleString()+' '+t('u_pallets')+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_pzasEquiv')+'</span><span class="mv">'+Math.round((parseFloat(i.actual)||0)*(parseFloat(i.pzasPallet)||0)).toLocaleString()+' '+t('u_pzas')+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_pzasPorPallet')+'</span><span class="mv">'+(parseFloat(i.pzasPallet)||0).toLocaleString()+'</span></div>'+
     '<div class="mrow"><span class="ml">Edificio</span><span class="mv" style="color:var(--green)">🏢 '+(i.ubicacion||'P1')+'</span></div>'+
-    '<div class="mrow"><span class="ml">Inv. inicial</span><span class="mv">'+(parseFloat(i.inicial)||0).toLocaleString()+' plt</span></div>'+
-    '<div class="mrow"><span class="ml">Entradas</span><span class="mv" style="color:var(--green)">+'+(parseFloat(i.entradas)||0).toLocaleString()+' plt</span></div>'+
-    '<div class="mrow"><span class="ml">Salidas</span><span class="mv" style="color:var(--red)">-'+(parseFloat(i.salidas)||0).toLocaleString()+' plt</span></div>'+
-    '<div class="mrow"><span class="ml">Precio unit. (pieza)</span><span class="mv">$'+(parseFloat(i.precio)||0).toFixed(4)+'</span></div>'+
-    '<div class="mrow"><span class="ml">Valor total</span><span class="mv" style="color:var(--amber)">$'+((parseFloat(i.actual)||0)*(parseFloat(i.pzasPallet)||0)*(parseFloat(i.precio)||0)).toFixed(2)+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_invInicial')+'</span><span class="mv">'+(parseFloat(i.inicial)||0).toLocaleString()+' '+t('u_plt')+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_entradas')+'</span><span class="mv" style="color:var(--green)">+'+(parseFloat(i.entradas)||0).toLocaleString()+' '+t('u_plt')+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_salidas')+'</span><span class="mv" style="color:var(--red)">-'+(parseFloat(i.salidas)||0).toLocaleString()+' '+t('u_plt')+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_precioUnit')+'</span><span class="mv">$'+(parseFloat(i.precio)||0).toFixed(4)+'</span></div>'+
+    '<div class="mrow"><span class="ml">'+t('lbl_valorTotal')+'</span><span class="mv" style="color:var(--amber)">$'+((parseFloat(i.actual)||0)*(parseFloat(i.pzasPallet)||0)*(parseFloat(i.precio)||0)).toFixed(2)+'</span></div>'+
     '<div style="margin:.7rem 0 .3rem;font-size:10px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Historial</div>'+
     hist.map(h=>'<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border);font-size:10px"><span style="color:var(--text2)">'+fmtDate(h.fecha)+'</span><span>'+tipoIcon(h.tipo)+' '+h.qty+' plt</span><span style="color:var(--accent)">🏢'+h.loc+'</span></div>').join('')+
     '<button style="width:100%;margin-top:1rem;padding:10px;background:rgba(77,166,255,.1);border:1px solid rgba(77,166,255,.3);border-radius:9px;color:var(--accent);font-size:12px;font-weight:600;cursor:pointer" onclick="selForMov('+idx+');closeModal()">→ Registrar movimiento</button>';
@@ -2511,7 +3090,7 @@ function xlsConfirmar(){
   }
 }
 </script>
-<div id="modalEdit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem;overflow-y:auto"><div style="background:var(--bg2);border-radius:14px;padding:1.4rem 1.2rem;width:100%;max-width:540px;border:1px solid var(--border2);max-height:92vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><span style="font-family:Rajdhani,sans-serif;font-size:17px;font-weight:700">Editar Parte</span><button onclick="closeEdit()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">X</button></div><div style="font-size:11px;font-weight:600;color:#4DA6FF;letter-spacing:.8px;margin-bottom:6px">📋 CATÁLOGO</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px">Part Number</label><input class="fi" id="editPN" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px">Familia</label><select class="fi" id="editFam" style="margin:0"><option value="PET FILM">PET FILM</option><option value="CORRUGADO">CORRUGADO</option><option value="SSGPR">SSGPR</option><option value="SRIV VE">SRIV VE</option><option value="SRRP">SRRP</option><option value="SBS">SBS</option><option value="CHIPBOARD">CHIPBOARD</option><option value="Otro">Otro</option></select></div></div><div style="margin-bottom:14px"><label class="fl" style="margin-bottom:2px">Descripción</label><input class="fi" id="editDesc" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;margin:0"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px">Piezas por pallet</label><input class="fi" id="editPzasPallet" type="number" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px">Especificación</label><input class="fi" id="editSpec" type="text" style="margin:0"></div></div><div style="font-size:11px;font-weight:600;color:#00e676;letter-spacing:.8px;margin-bottom:6px">📦 INVENTARIO</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px"><div><label class="fl" style="margin-bottom:2px">Inv. inicial</label><input class="fi" id="editInicial" type="number" oninput="_editRecalcStock()" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px">Entradas</label><input class="fi" id="editEntradas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#00e676;margin:0"></div><div><label class="fl" style="margin-bottom:2px">Salidas</label><input class="fi" id="editSalidas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#ff6b6b;margin:0"></div></div><div style="background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.3);border-radius:7px;padding:7px 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--text2)">Stock actual (calculado)</span><span id="editStockCalc" style="font-family:monospace;font-size:15px;font-weight:700;color:#4DA6FF">0 plt</span></div><div style="font-size:11px;font-weight:600;color:#FFBA00;letter-spacing:.8px;margin-bottom:6px">💲 PRECIO Y ESTATUS</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px"><div><label class="fl" style="margin-bottom:2px">Precio USD</label><input class="fi" id="editPrecio" type="number" step="0.0001" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px">Estatus</label><select class="fi" id="editEstatus" style="margin:0"><option value="DONE">DONE</option><option value="Pendiente">Pendiente</option><option value="Archivado">Archivado</option></select></div><div><label class="fl" style="margin-bottom:2px">Edificio</label><select class="fi" id="editUbic" style="margin:0"><option value="P1">P1</option><option value="P5">P5</option><option value="P6">P6</option></select></div></div><div style="padding-top:12px;border-top:1px solid var(--border2);display:flex;gap:8px;align-items:center"><button onclick="deleteFromEdit()" style="padding:10px 12px;background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.4);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:600;cursor:pointer">🗑️ Eliminar</button><div style="flex:1"></div><button onclick="closeEdit()" style="padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;cursor:pointer">Cancelar</button><button onclick="saveEdit()" style="padding:10px 18px;background:var(--accent2);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">💾 Guardar</button></div></div></div>
+<div id="modalEdit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem;overflow-y:auto"><div style="background:var(--bg2);border-radius:14px;padding:1.4rem 1.2rem;width:100%;max-width:540px;border:1px solid var(--border2);max-height:92vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><span style="font-family:Rajdhani,sans-serif;font-size:17px;font-weight:700" id="t-editarParte">Editar Parte</span><button onclick="closeEdit()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">X</button></div><div style="font-size:11px;font-weight:600;color:#4DA6FF;letter-spacing:.8px;margin-bottom:6px" id="t-catalogo">📋 CATÁLOGO</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPartNumber">Part Number</label><input class="fi" id="editPN" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblFamilia2">Familia</label><select class="fi" id="editFam" style="margin:0"><option value="PET FILM">PET FILM</option><option value="CORRUGADO">CORRUGADO</option><option value="SSGPR">SSGPR</option><option value="SRIV VE">SRIV VE</option><option value="SRRP">SRRP</option><option value="SBS">SBS</option><option value="CHIPBOARD">CHIPBOARD</option><option value="Otro">Otro</option></select></div></div><div style="margin-bottom:14px"><label class="fl" style="margin-bottom:2px" id="t-lblDescripcion2">Descripción</label><input class="fi" id="editDesc" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;margin:0"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPzasPallet2">Piezas por pallet</label><input class="fi" id="editPzasPallet" type="number" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEspec">Especificación</label><input class="fi" id="editSpec" type="text" style="margin:0"></div></div><div style="font-size:11px;font-weight:600;color:#00e676;letter-spacing:.8px;margin-bottom:6px" id="t-inventarioLbl">📦 INVENTARIO</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px"><div><label class="fl" style="margin-bottom:2px" id="t-lblInvInicial2">Inv. inicial</label><input class="fi" id="editInicial" type="number" oninput="_editRecalcStock()" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEntradas2">Entradas</label><input class="fi" id="editEntradas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#00e676;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblSalidas2">Salidas</label><input class="fi" id="editSalidas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#ff6b6b;margin:0"></div></div><div style="background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.3);border-radius:7px;padding:7px 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--text2)" id="t-stockCalculado">Stock actual (calculado)</span><span id="editStockCalc" style="font-family:monospace;font-size:15px;font-weight:700;color:#4DA6FF">0 plt</span></div><div style="font-size:11px;font-weight:600;color:#FFBA00;letter-spacing:.8px;margin-bottom:6px" id="t-precioEstatusLbl">💲 PRECIO Y ESTATUS</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPrecioUSD">Precio USD</label><input class="fi" id="editPrecio" type="number" step="0.0001" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEstatus">Estatus</label><select class="fi" id="editEstatus" style="margin:0"><option value="DONE">DONE</option><option value="Pendiente">Pendiente</option><option value="Archivado">Archivado</option></select></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEdificio3">Edificio</label><select class="fi" id="editUbic" style="margin:0"><option value="P1">P1</option><option value="P5">P5</option><option value="P6">P6</option></select></div></div><div style="padding-top:12px;border-top:1px solid var(--border2);display:flex;gap:8px;align-items:center"><button onclick="deleteFromEdit()" style="padding:10px 12px;background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.4);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:600;cursor:pointer" id="t-btnEliminar">🗑️ Eliminar</button><div style="flex:1"></div><button onclick="closeEdit()" style="padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;cursor:pointer" id="t-btnCancelar2">Cancelar</button><button onclick="saveEdit()" style="padding:10px 18px;background:var(--accent2);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer" id="t-btnGuardar2">💾 Guardar</button></div></div></div>
 
 
 <!-- ===== MODAL: IMPORTAR PRECIOS ===== -->
