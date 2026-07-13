@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260712e";
+var APP_VERSION = "20260713a";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -310,7 +310,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="fr"><div class="ft2">P5</div><div class="fb-w"><div class="fb" id="bP5" style="width:0%;background:linear-gradient(90deg,#00876a,#00e676)"></div></div><div class="fi2" id="fP5">–</div></div>
       <div class="fr" style="border:none"><div class="ft2">P6</div><div class="fb-w"><div class="fb" id="bP6" style="width:0%;background:linear-gradient(90deg,#c47800,#ffb300)"></div></div><div class="fi2" id="fP6">–</div></div>
     </div>
-    <div id="dashTransito" onclick="goPage('pgTransito',document.querySelectorAll('.bni')[4])" style="display:none;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:.7rem;cursor:pointer">
+    <div id="dashTransito" onclick="goPage('pgTransito',document.querySelectorAll('.bni')[6])" style="display:none;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:.7rem;cursor:pointer">
       <div style="width:32px;height:32px;border-radius:8px;background:rgba(77,166,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚢</div>
       <div style="flex:1;min-width:0">
         <div id="dashTransitoTxt" style="font-size:11px;font-weight:600">–</div>
@@ -395,7 +395,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
   </div>
 
-  <div id="pgTraz" class="page" style="display:none">
+  <div id="pgTraz" class="page">
     <div class="sw"><input class="si" id="trazS" style="text-transform:uppercase" placeholder="Buscar Part Number para rastrear..." oninput="this.value=this.value.toUpperCase();renderTraz()" ><span class="si-ic">🔍</span></div>
     <div id="trazResult"><div class="empty">🗺️<br>Escribe un Part Number para rastrear</div></div>
     <div class="sh">Mapa de planta</div>
@@ -432,22 +432,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div id="pgPlan" class="page">
   <div id="planEmpty" style="padding:3rem;text-align:center;color:var(--text2)">
-    <div style="font-size:40px;margin-bottom:1rem">📋</div>
-    <div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:.5rem">Sin plan activo</div>
-    <div style="font-size:13px;margin-bottom:1rem">El supervisor debe publicar el plan desde el BOM Simulator</div>
-  </div>
-  <div id="planContent" style="display:none">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
-      <div>
-        <div style="font-family:Rajdhani,sans-serif;font-size:17px;font-weight:700;color:var(--text)" id="planTitulo">Plan de Producción</div>
-        <div style="font-size:11px;color:var(--text2)" id="planFecha"></div>
-      </div>
-      <div style="display:flex;gap:.5rem">
-        <button class="btn btn-secondary btn-sm" onclick="imprimirOrden()">🖨 Imprimir</button>
-        <button class="btn btn-primary btn-sm" onclick="loadPlan()">🔄 Actualizar</button>
-      </div>
-    </div>
-    <div id="planLineas"></div>
+    <div style="font-size:40px;margin-bottom:1rem">⚙️</div>
+    <div style="font-family:Rajdhani,sans-serif;font-size:18px;font-weight:700;color:var(--text);margin-bottom:.5rem">Plan de máquinas — próximamente</div>
+    <div style="font-size:13px;margin-bottom:1rem">Este módulo se está preparando para dar seguimiento a las máquinas de producción de Planta 1.</div>
   </div>
 </div>
 
@@ -632,8 +619,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bni on" onclick="goPage('pgDash',this)"><span class="bni-i">📊</span>Dash</button>
     <button class="bni" onclick="goPage('pgInv',this)"><span class="bni-i">📦</span>Inv.</button>
     <button class="bni" id="navMov" onclick="goPage('pgMov',this)"><span class="bni-i">🔄</span>Mov.</button>
+    <button class="bni" onclick="goPage('pgTraz',this)"><span class="bni-i">🗺️</span>Traz.</button>
+    <button class="bni" onclick="goPage('pgQR',this)"><span class="bni-i">📷</span>QR</button>
     <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span>Hist.</button>
     <button class="bni" onclick="goPage('pgTransito',this)"><span class="bni-i">🚢</span>Tránsito</button>
+    <button class="bni" id="navPlan" onclick="goPage('pgPlan',this)"><span class="bni-i">⚙️</span>Plan</button>
     <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span>Admin</button>
   </div>
 </div>
@@ -1209,7 +1199,7 @@ function goBack() {
   pageHistory.pop(); // quitar actual
   const prev = pageHistory[pageHistory.length-1] || 'pgDash';
   const navMap = {
-    pgDash:0, pgInv:1, pgMov:2, pgHist:3, pgTransito:4, pgAdmin:5
+    pgDash:0, pgInv:1, pgMov:2, pgTraz:3, pgQR:4, pgHist:5, pgTransito:6, pgPlan:7, pgAdmin:8
   };
   const bniBtns = document.querySelectorAll('.bni');
   const btn = bniBtns[navMap[prev]] || bniBtns[0];
@@ -1459,24 +1449,19 @@ async function doMov() {
 }
 
 // ── TRAZABILIDAD ──
-const FSTEPS = [{l:'Almacén',i:'📦'},{l:'En Línea',i:'🏭'},{l:'Proceso',i:'⚙️'},{l:'QC',i:'🔬'},{l:'Final',i:'✅'}];
-function getStep(item) {
-  const loc = item.ubicacion||'Almacén';
-  if (loc.includes('Terminada')) return 4;
-  if (loc==='Cuarentena') return 3;
-  if (loc.startsWith('Línea')||loc==='Zhongke') return 1;
-  if (item.salidas>0&&item.actual===0) return 4;
-  if (item.salidas>0) return 2;
-  return 0;
-}
 function trazHTML(item) {
-  const step = getStep(item);
-  const nodes = FSTEPS.map((s,i)=>{
-    const cls = i<step?'tn-d':i===step?'tn-a':'tn-p';
-    const cc = i<step?'tc-d':'tc-p';
-    return '<div class="ts"><div class="tn '+cls+'">'+s.i+'</div><div class="tl">'+s.l+'</div>'+(i===step?'<div class="tln">← ahora</div>':'')+'</div>'+(i<FSTEPS.length-1?'<div class="tc '+cc+'"></div>':'');
-  }).join('');
-  return '<div class="tcard"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.4rem"><div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--accent)">'+item.pn+'</div><div style="font-size:9px;color:var(--text2)">'+item.desc+' · '+item.familia+'</div></div><div style="text-align:right"><div style="font-size:8px;color:var(--text2)">Ubicación</div><div style="font-size:11px;font-weight:600;color:var(--green)">📍'+(item.ubicacion||'Almacén')+'</div></div></div><div class="tflow">'+nodes+'</div></div>';
+  const pzasEq = Math.round((parseFloat(item.actual)||0)*(parseFloat(item.pzasPallet)||0));
+  const stockColor = item.actual>0 ? 'var(--green)' : 'var(--text2)';
+  return '<div class="tcard"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.4rem">'+
+    '<div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--accent)">'+item.pn+'</div><div style="font-size:9px;color:var(--text2)">'+item.desc+' · '+item.familia+'</div></div>'+
+    '<div style="text-align:right"><div style="font-size:8px;color:var(--text2)">Edificio</div><div style="font-size:11px;font-weight:600;color:var(--green)">🏢'+(item.ubicacion||'P1')+'</div></div>'+
+    '</div>'+
+    '<div style="display:flex;gap:12px;padding:.5rem 0;border-top:1px solid var(--border)">'+
+      '<div><div style="font-size:8px;color:var(--text2)">Stock actual</div><div style="font-size:14px;font-weight:700;color:'+stockColor+'">'+(parseFloat(item.actual)||0).toLocaleString()+' plt</div></div>'+
+      '<div><div style="font-size:8px;color:var(--text2)">Piezas</div><div style="font-size:14px;font-weight:700">'+pzasEq.toLocaleString()+'</div></div>'+
+      '<div><div style="font-size:8px;color:var(--text2)">Entradas</div><div style="font-size:12px;font-weight:600;color:var(--green)">+'+(parseFloat(item.entradas)||0).toLocaleString()+'</div></div>'+
+      '<div><div style="font-size:8px;color:var(--text2)">Salidas</div><div style="font-size:12px;font-weight:600;color:#ff6b6b">-'+(parseFloat(item.salidas)||0).toLocaleString()+'</div></div>'+
+    '</div></div>';
 }
 function renderTraz() {
   const q = document.getElementById('trazS').value.toLowerCase();
@@ -1491,12 +1476,12 @@ function renderTraz() {
   }).join('');
 }
 function renderLocMap() {
-  const zones = ['Almacén','Línea S1','Línea S2','Línea S3','Línea S4','Línea ASSY1','Línea VC','Zhongke','Cuarentena','Producción Terminada'];
-  const icons = {'Almacén':'📦','Línea S1':'🏭','Línea S2':'🏭','Línea S3':'🏭','Línea S4':'🏭','Línea ASSY1':'🔧','Línea VC':'✅','Zhongke':'🔬','Cuarentena':'⚠️','Producción Terminada':'🎯'};
-  const counts = {};
-  zones.forEach(z=>counts[z]=0);
-  items.forEach(i=>{ const z=i.ubicacion||'Almacén'; if(counts[z]!==undefined) counts[z]+=i.actual; });
-  document.getElementById('locMap').innerHTML = zones.map(z=>'<div class="lz '+(counts[z]>0?'hs':'')+'"><div class="lz-i">'+icons[z]+'</div><div class="lz-n">'+z+'</div><div class="lz-c">'+(counts[z]>0?fmt(counts[z])+' pzas':'—')+'</div></div>').join('');
+  const zones = ['P1','P5','P6'];
+  const icons = {'P1':'🏢','P5':'🏢','P6':'🏢'};
+  const counts = {}; const pzasCounts = {};
+  zones.forEach(z=>{counts[z]=0; pzasCounts[z]=0;});
+  items.forEach(i=>{ const z=zones.includes(i.ubicacion)?i.ubicacion:'P1'; counts[z]+=(parseFloat(i.actual)||0); pzasCounts[z]+=(parseFloat(i.actual)||0)*(parseFloat(i.pzasPallet)||0); });
+  document.getElementById('locMap').innerHTML = zones.map(z=>'<div class="lz '+(counts[z]>0?'hs':'')+'"><div class="lz-i">'+icons[z]+'</div><div class="lz-n">Edificio '+z+'</div><div class="lz-c">'+(counts[z]>0?fmt(counts[z])+' plt · '+fmt(Math.round(pzasCounts[z]))+' pzas':'—')+'</div></div>').join('');
 }
 
 // ── QR ──
@@ -1513,7 +1498,7 @@ function genQR(idx) {
   document.getElementById('qrList').innerHTML='';
   document.getElementById('qrS').value='';
   document.getElementById('qrPN').textContent = qrItem.pn;
-  document.getElementById('qrDesc').textContent = qrItem.desc+' · '+qrItem.familia+' · 📍'+(qrItem.ubicacion||'Almacén');
+  document.getElementById('qrDesc').textContent = qrItem.desc+' · '+qrItem.familia+' · 🏢'+(qrItem.ubicacion||'P1');
   const cv = document.getElementById('qrCanvas');
   cv.innerHTML = '';
   const qrText = qrItem.pn+'|'+qrItem.desc+'|'+qrItem.familia;
@@ -1880,17 +1865,8 @@ window.exportExcel = exportExcel;
 var planActivo = null;
 
 async function loadPlan() {
-  if (!db) return;
-  try {
-    const doc = await db.collection('plan_produccion').doc('plan_activo').get();
-    if (!doc.exists) {
-      document.getElementById('planEmpty').style.display = 'block';
-      document.getElementById('planContent').style.display = 'none';
-      return;
-    }
-    planActivo = doc.data();
-    renderPlanIMS();
-  } catch(e) { console.log('loadPlan:', e.message); }
+  // Placeholder: este módulo se re-implementará para máquinas de producción de Planta 1
+  return;
 }
 
 function renderPlanIMS() {
