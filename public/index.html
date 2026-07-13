@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260713c";
+var APP_VERSION = "20260713e";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -317,6 +317,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="fr"><div class="ft2">P5</div><div class="fb-w"><div class="fb" id="bP5" style="width:0%;background:linear-gradient(90deg,#00876a,#00e676)"></div></div><div class="fi2" id="fP5">–</div></div>
       <div class="fr" style="border:none"><div class="ft2">P6</div><div class="fb-w"><div class="fb" id="bP6" style="width:0%;background:linear-gradient(90deg,#c47800,#ffb300)"></div></div><div class="fi2" id="fP6">–</div></div>
     </div>
+    <div id="t-dashTransitoBrand" style="font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.06em;margin-bottom:6px;display:none">🚢 RAW MATERIAL TRACKING SYSTEM</div>
     <div id="dashTransito" onclick="goPage('pgTransito',document.querySelectorAll('.bni')[6])" style="display:none;align-items:center;gap:10px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:.7rem;cursor:pointer">
       <div style="width:32px;height:32px;border-radius:8px;background:rgba(77,166,255,.15);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🚢</div>
       <div style="flex:1;min-width:0">
@@ -808,6 +809,7 @@ const MASTER = [
 // ── STATE ──
 let items = JSON.parse(localStorage.getItem('ims1p_items')||'null') || MASTER.map(r=>({...r,entradas:0,salidas:0,actual:r.inicial,historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:r.inicial,loc:r.ubicacion,user:'Sistema',ref:'Inv. inicial'}]}));
 let movs = JSON.parse(localStorage.getItem('ims1p_movs')||'[]');
+var embarques = JSON.parse(localStorage.getItem('ims1p_embarques')||'[]');
 let user = JSON.parse(localStorage.getItem('ims1p_user')||'null');
 let _blockSnapshot = false;
 let selIdx = null, movTipo = 'E', invFam = 'TODOS', histFam = 'TODOS', selRole = 'admin';
@@ -1146,6 +1148,11 @@ function doLogout() {
 
 const IMS_TRANSLATIONS = {
   es: {
+    t_dashTransitoBrand: "🚢 SISTEMA DE RASTREO DE MATERIA PRIMA",
+    lbl_embarqueSing: "embarque en tránsito",
+    lbl_embarquesPlural: "embarques en tránsito",
+    lbl_proximaLlegada: "Próxima llegada:",
+    lbl_sinEta: "Sin ETA registrada",
     t_viewerSub: "Inventario · Acceso restringido",
     ph_viewerPass: "Clave de acceso",
     t_viewerBtn: "🔓 Ver Inventario",
@@ -1319,6 +1326,11 @@ const IMS_TRANSLATIONS = {
     t_btnGuardar2: "💾 Guardar",
   },
   en: {
+    t_dashTransitoBrand: "🚢 RAW MATERIAL TRACKING SYSTEM",
+    lbl_embarqueSing: "shipment in transit",
+    lbl_embarquesPlural: "shipments in transit",
+    lbl_proximaLlegada: "Next arrival:",
+    lbl_sinEta: "No ETA on file",
     t_viewerSub: "Inventory · Restricted access",
     ph_viewerPass: "Access code",
     t_viewerBtn: "🔓 View Inventory",
@@ -1492,6 +1504,11 @@ const IMS_TRANSLATIONS = {
     t_btnGuardar2: "💾 Save",
   },
   ko: {
+    t_dashTransitoBrand: "🚢 원자재 추적 시스템",
+    lbl_embarqueSing: "건의 운송 중인 선적",
+    lbl_embarquesPlural: "건의 운송 중인 선적",
+    lbl_proximaLlegada: "다음 도착:",
+    lbl_sinEta: "등록된 도착 예정일 없음",
     t_viewerSub: "재고 · 접근 제한",
     ph_viewerPass: "접근 코드",
     t_viewerBtn: "🔓 재고 보기",
@@ -1691,6 +1708,7 @@ function applyIMSTranslations(){
     if (typeof updateDash==='function' && typeof items!=='undefined' && items && document.getElementById('dL')) updateDash();
     if (typeof renderInv==='function' && typeof items!=='undefined' && items) renderInv();
     if (typeof renderTransito==='function' && typeof embarques!=='undefined' && embarques) renderTransito();
+    if (typeof updateDashTransito==='function' && typeof embarques!=='undefined' && embarques) updateDashTransito();
     if (typeof renderHist==='function' && typeof movs!=='undefined' && movs) renderHist();
   }
 }
@@ -1823,7 +1841,7 @@ function updateDash() {
 }
 
 // Cargar configuración guardada desde Firestore
-if(typeof db!=='undefined'){
+if(db){
   db.collection('ims_config').doc('planta1_papel').get().then(doc=>{
     if(doc.exists){
       const d=doc.data();
@@ -2600,7 +2618,6 @@ window.cleanDuplicates = cleanDuplicates;
 function resetStock() { if(user.role!=='admin'){toast('Solo admins','err');return;} if(!confirm('¿Resetear inventario inicial?'))return; items=MASTER.map(r=>({...r,entradas:0,salidas:0,actual:r.inicial,historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:r.inicial,loc:r.ubicacion,user:'Sistema',ref:'Reset'}]})); movs=[]; saveLocal(); updateDash(); renderInv(); renderHist(); renderLocMap(); toast('Stock reseteado','ok'); }
 
 // ── TRÁNSITO ──
-var embarques = JSON.parse(localStorage.getItem('ims1p_embarques')||'[]');
 var _embEditId = null;
 var TRANSITO_PASOS = ['🏭 Salida Synsai','🚢 Zarpe Busan','🌊 Tránsito marítimo','⚓ Arribo Long Beach','⚓ Arribo Ensenada','📋 Aduana','🚛 Tránsito terrestre','📦 Recibido'];
 
@@ -2905,14 +2922,17 @@ window.guardarEmbarque = guardarEmbarque;
 
 function updateDashTransito() {
   const el = document.getElementById('dashTransito');
+  const brand = document.getElementById('t-dashTransitoBrand');
   if (!el) return;
-  if (!embarques.length) { el.style.display='none'; return; }
+  if (!embarques.length) { el.style.display='none'; if(brand) brand.style.display='none'; return; }
   el.style.display='flex';
+  if (brand) brand.style.display='block';
   const activos = embarques.filter(function(e){ return (parseInt(e.paso)||0) < 7; });
   const conEta = activos.filter(function(e){ return e.etaAlmacen; }).sort(function(a,b){ return (a.etaAlmacen||'').localeCompare(b.etaAlmacen||''); });
   const prox = conEta[0];
-  document.getElementById('dashTransitoTxt').textContent = activos.length + ' embarque' + (activos.length!==1?'s':'') + ' en tránsito';
-  document.getElementById('dashTransitoSub').textContent = prox ? ('Próxima llegada: '+fmtFecha(prox.etaAlmacen)+' · '+prox.ref) : 'Sin ETA registrada';
+  const embLbl = activos.length===1 ? t('lbl_embarqueSing') : t('lbl_embarquesPlural');
+  document.getElementById('dashTransitoTxt').textContent = activos.length + ' ' + embLbl;
+  document.getElementById('dashTransitoSub').textContent = prox ? (t('lbl_proximaLlegada')+' '+fmtFecha(prox.etaAlmacen)+' · '+prox.ref) : t('lbl_sinEta');
 }
 
 // ── TOAST ──
@@ -3299,7 +3319,7 @@ function ilConfirmar(){
       if(e.loc3!==undefined)it.loc3=e.loc3;
       matched++;
       // Guardar en Firestore
-      if(typeof db!=='undefined'){
+      if(db){
         var docId=it.pn+'_'+(it.desc||'').replace(/[^a-zA-Z0-9]/g,'_');
         var upd={};
         if(e.loc1!==undefined)upd.loc1=it.loc1;
@@ -3645,7 +3665,7 @@ function guardarConfigMonitor(){
   STOCK_MIN_LIMITE = lim;
   STOCK_MIN_MODO = _cfgModo;
   STOCK_MIN_PNS_MANUAL = [..._cfgPns];
-  if(typeof db!=='undefined'){
+  if(db){
     db.collection('ims_config').doc('planta1_papel').set({
       stockMinLimite: lim,
       stockMinModo: _cfgModo,
