@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260713b";
+var APP_VERSION = "20260713c";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -1686,11 +1686,13 @@ function applyIMSTranslations(){
   document.querySelectorAll('[data-t-title]').forEach(function(el){
     el.setAttribute('title', tt(el.dataset.tTitle));
   });
-  // Refrescar contenido dinámico que ya se haya renderizado
-  if (typeof updateDash==='function' && document.getElementById('dL')) updateDash();
-  if (typeof renderInv==='function') renderInv();
-  if (typeof renderTransito==='function') renderTransito();
-  if (typeof renderHist==='function') renderHist();
+  // Refrescar contenido dinámico que ya se haya renderizado (solo si ya hay sesión y datos cargados)
+  if (typeof user !== 'undefined' && user) {
+    if (typeof updateDash==='function' && typeof items!=='undefined' && items && document.getElementById('dL')) updateDash();
+    if (typeof renderInv==='function' && typeof items!=='undefined' && items) renderInv();
+    if (typeof renderTransito==='function' && typeof embarques!=='undefined' && embarques) renderTransito();
+    if (typeof renderHist==='function' && typeof movs!=='undefined' && movs) renderHist();
+  }
 }
 
 window.setIMSLang = function(lang){
