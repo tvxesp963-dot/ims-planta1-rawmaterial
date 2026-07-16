@@ -3060,12 +3060,16 @@ function xlsProcesar(file){
       return obj;
     }).filter(function(r){return Object.values(r).some(function(v){return v!==null;});});
     if(!rows.length){toast('Hoja "'+hoja+'" vacía','err');return;}
-    var hs=Object.keys(rows[0]),colPN=null,colDesc=null,colInv=null,colPrice=null;
+    var hs=Object.keys(rows[0]),colPN=null,colDesc=null,colInv=null,colPrice=null,colPzas=null,colFam=null,colEdif=null,colSpec=null;
     hs.forEach(function(h){var hl=h.toLowerCase().trim();
       if(!colPN&&(hl.includes('part')||hl==='pn'))colPN=h;
       if(!colDesc&&(hl.includes('desc')))colDesc=h;
       if(!colInv&&(hl.includes('invent')||hl==='inv'||hl==='inv p4'||hl.includes('stock')))colInv=h;
       if(!colPrice&&(hl.includes('price')||hl.includes('unit')||hl.includes('precio')))colPrice=h;
+      if(!colPzas&&(hl.includes('piezasporpallet')||hl.includes('piezas por pallet')||hl.includes('pzaspallet')))colPzas=h;
+      if(!colFam&&hl.includes('famil'))colFam=h;
+      if(!colEdif&&(hl.includes('edificio')||hl.includes('ubicaci')))colEdif=h;
+      if(!colSpec&&(hl.includes('especific')||hl==='spec'))colSpec=h;
     });
     if(!colPN||!colDesc){toast('No se encontraron columnas Part Number/Descripcion','err');return;}
     var validas=[],cero=0,err=0;
@@ -3076,8 +3080,12 @@ function xlsProcesar(file){
       if(!desc){err++;return;}
       var inv=_xlsVal(colInv?row[colInv]:0);
       var precio=_xlsVal(colPrice?row[colPrice]:0);
+      var pzasPallet=_xlsVal(colPzas?row[colPzas]:0);
+      var familia=(colFam&&row[colFam])?row[colFam].toString().trim():_xlsFam(pn);
+      var edificio=(colEdif&&row[colEdif])?row[colEdif].toString().trim():'Almacén';
+      var spec=(colSpec&&row[colSpec])?row[colSpec].toString().trim():'';
       if(inv===0)cero++;
-      validas.push({pn:pn.toString().trim(),desc:desc,familia:_xlsFam(pn),inicial:Math.round(inv),actual:Math.round(inv),precio:precio,estatus:'DONE',entradas:0,salidas:0,ubicacion:'Almacén',historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:Math.round(inv),loc:'Almacén',user:user?user.name:'Sistema',ref:'Carga Excel'}]});
+      validas.push({pn:pn.toString().trim(),desc:desc,spec:spec,familia:familia,precio:precio,pzasPallet:pzasPallet,ubicacion:edificio,inicial:Math.round(inv),actual:Math.round(inv),estatus:'DONE',entradas:0,salidas:0,historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:Math.round(inv),loc:edificio,user:user?user.name:'Sistema',ref:'Carga Excel'}]});
     });
     _xlsDatos=validas;
     document.getElementById('xCntTotal').textContent=rows.length;
@@ -3106,9 +3114,19 @@ function xlsConfirmar(){
   items=_xlsDatos;movs=[];saveLocal();
   updateDash();renderInv();renderHist();renderLocMap();
   if(db){
-    var batch=db.batch();
-    _xlsDatos.forEach(function(item){batch.set(db.collection('planta1_papel_inventario').doc(getDocId(item.pn,item.desc,item.ubicacion)),item);});
-    batch.commit().then(function(){document.getElementById('xSpinnerAnim').style.display='none';document.getElementById('xSpinner').style.display='inline-block';document.getElementById('xSpinner').textContent='✅';document.getElementById('xMsg').textContent=_xlsDatos.length+' partes cargadas correctamente.';setTimeout(cerrarCargaExcel,2000);toast('Inventario actualizado','ok');}).catch(function(err){document.getElementById('xSpinnerAnim').style.display='none';document.getElementById('xSpinner').style.display='inline-block';document.getElementById('xSpinner').textContent='⚠️';document.getElementById('xMsg').textContent='Local OK. Firebase: '+err.message;setTimeout(cerrarCargaExcel,3000);});
+    document.getElementById('xMsg').textContent='Borrando inventario anterior...';
+    db.collection('planta1_papel_inventario').get().then(function(snap){
+      var delBatches=[],cur=db.batch(),cnt=0;
+      snap.forEach(function(doc){cur.delete(doc.ref);cnt++;if(cnt===400){delBatches.push(cur);cur=db.batch();cnt=0;}});
+      if(cnt>0)delBatches.push(cur);
+      return delBatches.reduce(function(p,b){return p.then(function(){return b.commit();});},Promise.resolve());
+    }).then(function(){
+      document.getElementById('xMsg').textContent='Guardando '+_xlsDatos.length+' partes...';
+      var setBatches=[],cur=db.batch(),cnt=0;
+      _xlsDatos.forEach(function(item){cur.set(db.collection('planta1_papel_inventario').doc(getDocId(item.pn,item.desc,item.ubicacion)),item);cnt++;if(cnt===400){setBatches.push(cur);cur=db.batch();cnt=0;}});
+      if(cnt>0)setBatches.push(cur);
+      return setBatches.reduce(function(p,b){return p.then(function(){return b.commit();});},Promise.resolve());
+    }).then(function(){document.getElementById('xSpinnerAnim').style.display='none';document.getElementById('xSpinner').style.display='inline-block';document.getElementById('xSpinner').textContent='✅';document.getElementById('xMsg').textContent=_xlsDatos.length+' partes cargadas correctamente.';setTimeout(cerrarCargaExcel,2000);toast('Inventario actualizado','ok');}).catch(function(err){document.getElementById('xSpinnerAnim').style.display='none';document.getElementById('xSpinner').style.display='inline-block';document.getElementById('xSpinner').textContent='⚠️';document.getElementById('xMsg').textContent='Local OK. Firebase: '+err.message;setTimeout(cerrarCargaExcel,3000);});
   } else {
     document.getElementById('xSpinnerAnim').style.display='none';document.getElementById('xSpinner').style.display='inline-block';document.getElementById('xSpinner').textContent='✅';document.getElementById('xMsg').textContent=_xlsDatos.length+' partes cargadas (local).';setTimeout(cerrarCargaExcel,2000);toast('Inventario cargado','ok');
   }
