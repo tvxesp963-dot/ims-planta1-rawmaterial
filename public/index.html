@@ -1919,7 +1919,7 @@ function renderInv() {
     } else if (invFam!=='TODOS' && i.familia!==invFam) {
       return false;
     }
-    const pn=i.pn||''; const desc=i.desc||''; return !q||pn.toLowerCase().includes(q)||desc.toLowerCase().includes(q);
+    const pn=i.pn||''; const desc=i.desc||''; const spec=i.spec||''; return !q||pn.toLowerCase().includes(q)||desc.toLowerCase().includes(q)||spec.toLowerCase().includes(q);
   });
   const el = document.getElementById('invList');
   if (!f.length) { el.innerHTML='<div class="empty">📦<br>Sin resultados</div>'; return; }
