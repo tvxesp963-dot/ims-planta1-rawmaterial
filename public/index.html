@@ -531,6 +531,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="ac" onclick="abrirCargaExcel()" style="border-color:rgba(46,204,113,.4)"><div class="ac-i">📊</div><div class="ac-l">Carga Masiva Stock</div><div class="ac-s">Reemplaza inventario desde Excel</div></div>
       <div class="ac" onclick="abrirImportLoc()" style="border-color:rgba(52,152,219,.4)"><div class="ac-i">📍</div><div class="ac-l">Importar Locaciones</div><div class="ac-s">Desde Excel PN+Loc1+Loc2+Loc3</div></div>
       <div class="ac" onclick="abrirEliminarFamilia()" style="border-color:#e74c3c"><div class="ac-i">🗑️</div><div class="ac-l">Eliminar por Familia</div><div class="ac-s">Borra familias completas</div></div>
+      <div class="ac" onclick="clearTransito()" style="border-color:#e74c3c"><div class="ac-i">🚢</div><div class="ac-l">Limpiar Tránsito</div><div class="ac-s">Borra todos los embarques</div></div>
     </div>
     <div class="sh" id="t-shUsuarios">Usuarios IMS</div>
     <div class="card" style="padding:.9rem">
@@ -2588,6 +2589,29 @@ function showKPIs() {
     '<div class="mrow"><span class="ml">PN activos</span><span class="mv">'+items.filter(i=>i.actual>0).length+' / '+items.length+'</span></div>';
   document.getElementById('modal').classList.add('show');
 }
+async function clearTransito() {
+  if(user&&user.role!=='admin'){toast('Solo admins','err');return;}
+  if (!confirm('¿Eliminar TODOS los embarques en tránsito? Esta acción no se puede deshacer.')) return;
+  toast('Eliminando embarques...','info');
+  try {
+    if(db){
+      const snap = await db.collection('planta1_papel_transito').get();
+      const docs = snap.docs;
+      for(let i=0;i<docs.length;i+=400){
+        const batch = db.batch();
+        docs.slice(i,i+400).forEach(d=>batch.delete(d.ref));
+        await batch.commit();
+      }
+    }
+    embarques = [];
+    saveEmbarquesLocal();
+    renderTransito();
+    updateDashTransito();
+    toast('✅ Embarques en tránsito eliminados','ok');
+  } catch(e) { toast('Error: ' + e.message,'err'); console.error(e); }
+}
+window.clearTransito = clearTransito;
+
 function clearMovs() { if(user.role!=='admin'){toast('Solo admins','err');return;} if(!confirm('¿Limpiar historial?'))return; movs=[]; saveLocal(); renderHist(); updateDash(); toast('Historial limpiado','ok'); }
 async function migrateToFirestore() {
   if (!db) { toast('Sin conexión a Firebase','err'); return; }
