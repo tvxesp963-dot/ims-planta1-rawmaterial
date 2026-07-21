@@ -1989,14 +1989,14 @@ function renderMovList() {
   const q = document.getElementById('movS').value.toLowerCase();
   const el = document.getElementById('movList');
   if (!q) { el.innerHTML=''; return; }
-  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)).slice(0,12);
-  el.innerHTML = f.map(item=>'<div class="ir" onclick="selForMov('+items.indexOf(item)+')" style="padding:.55rem .75rem;margin-bottom:.3rem"><div style="flex:1"><div class="ir-pn" style="font-size:11px">'+item.pn+'</div><div class="ir-d" style="font-size:9px">'+item.desc+' · 🏢'+(item.ubicacion||'P1')+'</div></div><div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent)">'+(parseFloat(item.actual)||0).toLocaleString()+' plt</div></div>').join('');
+  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)||(i.spec||'').toLowerCase().includes(q)).slice(0,12);
+  el.innerHTML = f.map(item=>'<div class="ir" onclick="selForMov('+items.indexOf(item)+')" style="padding:.55rem .75rem;margin-bottom:.3rem"><div style="flex:1"><div class="ir-pn" style="font-size:11px">'+item.pn+'</div><div class="ir-d" style="font-size:9px">'+item.desc+(item.spec?' · '+item.spec:'')+' · 🏢'+(item.ubicacion||'P1')+'</div></div><div style="font-family:Rajdhani,sans-serif;font-size:14px;font-weight:700;color:var(--accent)">'+(parseFloat(item.actual)||0).toLocaleString()+' plt</div></div>').join('');
 }
 
 function selForMov(idx) {
   selIdx = idx;
   const i = items[idx];
-  document.getElementById('mfPN').textContent = i.pn+' · '+i.desc;
+  document.getElementById('mfPN').textContent = i.pn+' · '+i.desc+(i.spec?' · '+i.spec:'');
   document.getElementById('mfSt').textContent = 'Stock: '+(parseFloat(i.actual)||0).toLocaleString()+' plt · 🏢'+(i.ubicacion||'P1');
   document.getElementById('mfQty').value = 1;
   document.getElementById('movList').innerHTML='';
@@ -2054,7 +2054,7 @@ function trazHTML(item) {
   const pzasEq = Math.round((parseFloat(item.actual)||0)*(parseFloat(item.pzasPallet)||0));
   const stockColor = item.actual>0 ? 'var(--green)' : 'var(--text2)';
   return '<div class="tcard"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.4rem">'+
-    '<div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--accent)">'+item.pn+'</div><div style="font-size:9px;color:var(--text2)">'+item.desc+' · '+item.familia+'</div></div>'+
+    '<div><div style="font-family:Rajdhani,sans-serif;font-size:13px;font-weight:700;color:var(--accent)">'+item.pn+'</div><div style="font-size:9px;color:var(--text2)">'+item.desc+(item.spec?' · '+item.spec:'')+' · '+item.familia+'</div></div>'+
     '<div style="text-align:right"><div style="font-size:8px;color:var(--text2)">Edificio</div><div style="font-size:11px;font-weight:600;color:var(--green)">🏢'+(item.ubicacion||'P1')+'</div></div>'+
     '</div>'+
     '<div style="display:flex;gap:12px;padding:.5rem 0;border-top:1px solid var(--border)">'+
@@ -2068,7 +2068,7 @@ function renderTraz() {
   const q = document.getElementById('trazS').value.toLowerCase();
   const el = document.getElementById('trazResult');
   if (!q) { el.innerHTML='<div class="empty">🗺️<br>Escribe un Part Number para rastrear</div>'; return; }
-  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)).slice(0,5);
+  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)||(i.spec||'').toLowerCase().includes(q)).slice(0,5);
   if (!f.length) { el.innerHTML='<div class="empty">🔍<br>Sin resultados</div>'; return; }
   el.innerHTML = f.map(item=>{
     const hist = (item.historial||[]).slice(-5);
@@ -2091,8 +2091,8 @@ function renderQRList() {
   const q = document.getElementById('qrS').value.toLowerCase();
   const el = document.getElementById('qrList');
   if (!q) { el.innerHTML=''; return; }
-  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)).slice(0,12);
-  el.innerHTML = f.map(item=>'<div class="ir" onclick="genQR('+items.indexOf(item)+')" style="padding:.55rem .75rem;margin-bottom:.3rem"><div style="flex:1"><div class="ir-pn" style="font-size:11px">'+item.pn+'</div><div class="ir-d" style="font-size:9px">'+item.desc+'</div></div><div class="pill pd">'+item.familia+'</div></div>').join('');
+  const f = items.filter(i=>i.pn.toLowerCase().includes(q)||i.desc.toLowerCase().includes(q)||(i.spec||'').toLowerCase().includes(q)).slice(0,12);
+  el.innerHTML = f.map(item=>'<div class="ir" onclick="genQR('+items.indexOf(item)+')" style="padding:.55rem .75rem;margin-bottom:.3rem"><div style="flex:1"><div class="ir-pn" style="font-size:11px">'+item.pn+'</div><div class="ir-d" style="font-size:9px">'+item.desc+(item.spec?' · '+item.spec:'')+'</div></div><div class="pill pd">'+item.familia+'</div></div>').join('');
 }
 function genQR(idx) {
   qrItem = items[idx];
@@ -3616,7 +3616,8 @@ function cfgBuscarPN(q){
   const res = items.filter(i=>{
     const pn=(i.pn||'').toUpperCase();
     const desc=(i.desc||'').toUpperCase();
-    return pn.includes(q)||desc.includes(q);
+    const spec=(i.spec||'').toUpperCase();
+    return pn.includes(q)||desc.includes(q)||spec.includes(q);
   }).slice(0,8);
   if(!res.length){wrap.style.display='none';return;}
   wrap.innerHTML = res.map(i=>`
@@ -3626,7 +3627,7 @@ function cfgBuscarPN(q){
       onmouseout="this.style.background='transparent'">
       <div>
         <div style="font-size:11px;font-weight:600;color:var(--accent);font-family:'Rajdhani',sans-serif">${i.pn}</div>
-        <div style="font-size:9px;color:var(--text2)">${i.desc||''}</div>
+        <div style="font-size:9px;color:var(--text2)">${i.desc||''}${i.spec?' · '+i.spec:''}</div>
       </div>
       <div style="font-size:11px;font-weight:600;color:${(parseFloat(i.actual)||0)>0?'var(--accent)':'var(--text2)'}">
         ${(parseFloat(i.actual)||0).toLocaleString()}
