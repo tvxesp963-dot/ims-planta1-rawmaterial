@@ -530,6 +530,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="ac" onclick="abrirImportPrecios()" style="border-color:rgba(255,179,0,.4)"><div class="ac-i">💲</div><div class="ac-l" id="t-acImportPrecios">Importar Precios</div><div class="ac-s" id="t-acImportPreciosSub">Desde Excel PN+Price</div></div>
       <div class="ac" onclick="abrirCargaExcel()" style="border-color:rgba(46,204,113,.4)"><div class="ac-i">📊</div><div class="ac-l">Carga Masiva Stock</div><div class="ac-s">Reemplaza inventario desde Excel</div></div>
       <div class="ac" onclick="abrirImportLoc()" style="border-color:rgba(52,152,219,.4)"><div class="ac-i">📍</div><div class="ac-l">Importar Locaciones</div><div class="ac-s">Desde Excel PN+Loc1+Loc2+Loc3</div></div>
+      <div class="ac" onclick="abrirEliminarFamilia()" style="border-color:#e74c3c"><div class="ac-i">🗑️</div><div class="ac-l">Eliminar por Familia</div><div class="ac-s">Borra familias completas</div></div>
     </div>
     <div class="sh" id="t-shUsuarios">Usuarios IMS</div>
     <div class="card" style="padding:.9rem">
@@ -642,6 +643,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+<div id="modalDelFam" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:1.5rem 1.2rem 2.5rem;border-top:1px solid #e74c3c;max-height:90vh;overflow-y:auto">
+    <div style="width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 1.2rem"></div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;margin-bottom:.2rem;color:#e74c3c">🗑️ Eliminar por Familia</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:1rem">Borra TODOS los registros de las familias seleccionadas, en cualquier edificio. Esta acción no se puede deshacer.</div>
+    <div id="delFamList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem"></div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:.4rem">Escribe <b>BORRAR</b> para confirmar:</div>
+    <input id="delFamConfirm" class="si" style="width:100%;margin-bottom:1rem;text-transform:uppercase" placeholder="BORRAR">
+    <div style="display:flex;gap:10px">
+      <button onclick="cerrarEliminarFamilia()" style="flex:1;padding:12px;border-radius:10px;background:var(--bg3);border:1px solid var(--border2);color:var(--text);font-weight:600">Cancelar</button>
+      <button onclick="eliminarFamiliaConfirmar()" style="flex:1;padding:12px;border-radius:10px;background:#e74c3c;border:none;color:#fff;font-weight:700">Eliminar</button>
+    </div>
+  </div>
+</div>
 
 <div id="modalExcel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:600;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
   <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:520px;padding:1.5rem 1.2rem 2.5rem;border-top:1px solid var(--border2);max-height:90vh;overflow-y:auto">
@@ -2589,6 +2605,42 @@ async function migrateToFirestore() {
 }
 window.migrateToFirestore = migrateToFirestore;
 
+function abrirEliminarFamilia(){
+  if(user&&user.role!=='admin'){toast('Solo admins','err');return;}
+  const familias=[...new Set(items.map(i=>i.familia||'Otro'))].sort();
+  const el=document.getElementById('delFamList');
+  el.innerHTML=familias.map(f=>{
+    const cnt=items.filter(i=>(i.familia||'Otro')===f).length;
+    return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;cursor:pointer"><input type="checkbox" class="delFamChk" value="'+f+'" style="width:16px;height:16px"><span style="flex:1;font-size:12px;font-weight:600">'+f+'</span><span style="font-size:10px;color:var(--text2)">'+cnt+' registros</span></label>';
+  }).join('');
+  document.getElementById('delFamConfirm').value='';
+  document.getElementById('modalDelFam').style.display='flex';
+}
+function cerrarEliminarFamilia(){document.getElementById('modalDelFam').style.display='none';}
+async function eliminarFamiliaConfirmar(){
+  const confirmTxt=document.getElementById('delFamConfirm').value.trim().toUpperCase();
+  if(confirmTxt!=='BORRAR'){toast('Escribe BORRAR para confirmar','err');return;}
+  const seleccionadas=[...document.querySelectorAll('.delFamChk:checked')].map(c=>c.value);
+  if(!seleccionadas.length){toast('Selecciona al menos una familia','err');return;}
+  if(!confirm('¿Seguro que quieres eliminar TODOS los registros de: '+seleccionadas.join(', ')+'? Esto no se puede deshacer.'))return;
+  toast('Eliminando...','info');
+  try{
+    const aEliminar=items.filter(i=>seleccionadas.includes(i.familia||'Otro'));
+    if(db){
+      for(let i=0;i<aEliminar.length;i+=400){
+        const batch=db.batch();
+        aEliminar.slice(i,i+400).forEach(item=>{
+          batch.delete(db.collection('planta1_papel_inventario').doc(getDocId(item.pn,item.desc,item.ubicacion)));
+        });
+        await batch.commit();
+      }
+    }
+    items=items.filter(i=>!seleccionadas.includes(i.familia||'Otro'));
+    saveLocal();updateDash();renderInv();renderHist();renderLocMap();
+    cerrarEliminarFamilia();
+    toast('✅ '+aEliminar.length+' registros eliminados','ok');
+  }catch(e){toast('Error: '+e.message,'err');console.error(e);}
+}
 async function cleanDuplicates() {
   if (!db) { toast('Sin conexión a Firebase','err'); return; }
   if (!confirm('¿Eliminar documentos duplicados (IDs sin descripción)?')) return;
