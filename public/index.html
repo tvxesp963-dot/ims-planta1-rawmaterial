@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260907e";
+var APP_VERSION = "20260908a";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -3884,10 +3884,12 @@ async function generarReporteFecha(){
       const stock = _repStockAlaFecha(it.historial, cutoffMs);
       if (stock===null) return;
       const precio = Number(it.precio)||0;
-      const valor = stock*precio;
+      const pzasPallet = Number(it.pzasPallet)||0;
+      const piezas = Math.round(stock*pzasPallet);
+      const valor = piezas*precio;
       totalValor += valor;
       filas.push({familia:it.familia||'SIN FAMILIA', pn:it.pn||'', desc:it.desc||'', ubicacion:it.ubicacion||'',
-        stock, precio, valor:Math.round(valor*100)/100});
+        stock, pzasPallet, piezas, precio, valor:Math.round(valor*100)/100});
     });
     if (filas.length===0){ st.style.background='#fee2e2'; st.style.color='#991b1b'; st.textContent='No hay partes con historial hasta esa fecha.'; btn.disabled=false; return; }
     filas.sort((a,b)=>(a.familia+a.pn).localeCompare(b.familia+b.pn));
@@ -3937,21 +3939,22 @@ async function generarReporteFecha(){
 
     // ===== Detalle (agrupado por familia, con fila de encabezado por grupo estilo imagen) =====
     const wsD = wb.addWorksheet('Detalle');
-    wsD.columns=[{width:16},{width:34},{width:10},{width:12},{width:14},{width:14}];
-    headerRow(wsD, ['Part Number','Descripción','Ubicación','Inventario al '+fechaInput,'Precio Unit ($)','Valor ($)']);
+    wsD.columns=[{width:16},{width:34},{width:10},{width:12},{width:12},{width:12},{width:14},{width:14}];
+    headerRow(wsD, ['Part Number','Descripción','Ubicación','Inventario al '+fechaInput+' (plt)','Piezas/Pallet','Piezas Totales','Precio Unit ($)','Valor ($)']);
     familias.forEach(fam=>{
-      const gr = wsD.addRow([fam,'','','','','']);
-      wsD.mergeCells(gr.number,1,gr.number,6);
-      gr.getCell(1).font={bold:true,color:{argb:AZUL.replace('FF','FF')}};
+      const gr = wsD.addRow([fam,'','','','','','','']);
+      wsD.mergeCells(gr.number,1,gr.number,8);
       gr.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:AZUL_CLARO}};
       gr.getCell(1).font={bold:true};
       gr.eachCell(c=>{c.border=borde;});
       filas.filter(f=>f.familia===fam).forEach(f=>{
-        const r = wsD.addRow([f.pn, f.desc+(f.ubicacion?'':''), f.ubicacion, f.stock, f.precio, f.valor]);
+        const r = wsD.addRow([f.pn, f.desc, f.ubicacion, f.stock, f.pzasPallet, f.piezas, f.precio, f.valor]);
         r.eachCell(c=>{c.border=borde;});
         numCell(r.getCell(4), f.stock);
-        moneyCell(r.getCell(5), f.precio);
-        moneyCell(r.getCell(6), f.valor);
+        numCell(r.getCell(5), f.pzasPallet);
+        numCell(r.getCell(6), f.piezas);
+        moneyCell(r.getCell(7), f.precio);
+        moneyCell(r.getCell(8), f.valor);
         if (f.stock<0){ r.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:ROJO_CLARO}};}); r.getCell(4).font={color:{argb:ROJO_TXT},bold:true}; }
       });
     });
@@ -4025,7 +4028,7 @@ function agLeerArchivo(file){
     var rows=raw.slice(headerIdx+1).map(function(r){ var o={}; headers.forEach(function(h,i){ if(h) o[h]=r[i]!==undefined?r[i]:null; }); return o; })
       .filter(function(r){ return Object.values(r).some(function(v){return v!==null;}); });
     if(!rows.length){ toast('Hoja vacía','err'); return; }
-    var hs=Object.keys(rows[0]), colPN=null, colFam=null, colDesc=null, colUbic=null, colInv=null, colPrecio=null;
+    var hs=Object.keys(rows[0]), colPN=null, colFam=null, colDesc=null, colUbic=null, colInv=null, colPrecio=null, colPzas=null;
     hs.forEach(function(h){ var hl=h.toLowerCase().trim();
       if(!colPN&&(hl.includes('part')||hl==='pn')) colPN=h;
       if(!colFam&&hl.includes('famil')) colFam=h;
@@ -4033,6 +4036,7 @@ function agLeerArchivo(file){
       if(!colUbic&&(hl.includes('ubicaci')||hl.includes('edificio'))) colUbic=h;
       if(!colInv&&(hl.includes('invent')||hl.includes('stock'))) colInv=h;
       if(!colPrecio&&(hl.includes('precio')||hl.includes('price')||hl.includes('unit'))) colPrecio=h;
+      if(!colPzas&&(hl.includes('piezasporpallet')||hl.includes('piezas por pallet')||hl.includes('pzaspallet'))) colPzas=h;
     });
     if(!colPN||!colDesc){ toast('No se encontraron columnas Part Number/Descripción','err'); return; }
     var validas=[], err=0;
@@ -4048,7 +4052,7 @@ function agLeerArchivo(file){
         spec: '',
         familia: (colFam&&row[colFam])?row[colFam].toString().trim():'Otro',
         precio: _xlsVal(colPrecio?row[colPrecio]:0),
-        pzasPallet: 0,
+        pzasPallet: _xlsVal(colPzas?row[colPzas]:0),
         ubicacion: ubic,
         inicial: Math.round(_xlsVal(colInv?row[colInv]:0)),
         actual: Math.round(_xlsVal(colInv?row[colInv]:0)),
