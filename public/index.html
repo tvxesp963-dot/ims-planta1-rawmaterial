@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260713e";
+var APP_VERSION = "20260907a";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -460,6 +460,48 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div id="transitoDetalle" style="display:none;margin-top:.7rem"></div>
   </div>
 
+  <div id="pgMat26" class="page">
+    <div class="sh" style="display:flex;justify-content:space-between;align-items:center">
+      <span>🗂️ Materia Prima 2026</span>
+      <button onclick="abrirCargarExcel26()" style="background:var(--green2);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">↑ Cargar Excel</button>
+    </div>
+    <div class="sw"><input class="si" id="mat26S" style="text-transform:uppercase" placeholder="Buscar Familia, Part Number o Descripción..." autocomplete="off" oninput="this.value=this.value.toUpperCase();renderMat26()"><span class="si-ic">🔍</span></div>
+    <div id="mat26Empty" style="display:none;padding:2rem;text-align:center;color:var(--text2)">
+      <div style="font-size:36px;margin-bottom:.6rem">🗂️</div>
+      <div style="font-size:13px">Sin materiales cargados todavía. Usa "Cargar Excel" para empezar.</div>
+    </div>
+    <div class="ir-head"><div>Part Number</div><div style="text-align:center">Familia</div><div style="text-align:center">Ubicación</div><div style="text-align:right">Stock</div><div style="text-align:right">Precio USD</div></div>
+    <div id="mat26List"></div>
+  </div>
+
+  <div id="modalCargarExcel26" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:750;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
+    <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:1.4rem 1.1rem 2.2rem;border-top:1px solid var(--border2);max-height:90vh;overflow-y:auto">
+      <div style="width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 1rem"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700">🗂️ Cargar Excel — Materia Prima 2026</div>
+        <button onclick="cerrarCargarExcel26()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <div id="m26-p1">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Columnas esperadas: <b>Familia, Part Number, Descripción, Ubicación, Inventario al..., Precio Unit ($)</b>. Esto <b>agrega o actualiza</b> partes — nunca borra lo que ya está cargado aquí.</div>
+        <input type="file" id="m26File" accept=".xlsx,.xls" style="margin-bottom:1rem;color:var(--text);font-size:12px" onchange="m26LeerArchivo(this.files[0])">
+      </div>
+      <div id="m26-p2" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--accent)" id="m26CntOk">0</div><div style="font-size:10px;color:var(--text2)">Partes válidas</div></div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)" id="m26CntErr">0</div><div style="font-size:10px;color:var(--text2)">Con error</div></div>
+        </div>
+        <div style="max-height:200px;overflow-y:auto;margin-bottom:1rem;border:1px solid var(--border);border-radius:8px">
+          <table style="width:100%;border-collapse:collapse;font-size:11px"><tbody id="m26PreviewBody"></tbody></table>
+        </div>
+        <button id="m26BtnConf" onclick="m26Confirmar()" class="btn-l">✓ Confirmar carga</button>
+      </div>
+      <div id="m26-p3" style="display:none;text-align:center;padding:2rem 0">
+        <div style="font-size:36px;margin-bottom:.6rem" id="m26Spinner">⏳</div>
+        <div style="font-size:13px;color:var(--text2)" id="m26Msg">Guardando...</div>
+      </div>
+    </div>
+  </div>
+
   <div id="modalEmbarque" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:750;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
     <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:1.4rem 1.1rem 2.2rem;border-top:1px solid var(--border2);max-height:90vh;overflow-y:auto">
       <div style="width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 1rem"></div>
@@ -637,6 +679,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bni" onclick="goPage('pgQR',this)"><span class="bni-i">📷</span>QR</button>
     <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span><span id="t-navHist">Hist.</span></button>
     <button class="bni" onclick="goPage('pgTransito',this)"><span class="bni-i">🚢</span><span id="t-navTransito">Tránsito</span></button>
+    <button class="bni" onclick="goPage('pgMat26',this)"><span class="bni-i">🗂️</span><span>Mat.26</span></button>
     <button class="bni" id="navPlan" onclick="goPage('pgPlan',this)"><span class="bni-i">⚙️</span><span id="t-navPlan">Plan</span></button>
     <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span><span id="t-navAdmin">Admin</span></button>
   </div>
@@ -3877,6 +3920,147 @@ async function generarReporteFecha(){
   } finally { btn.disabled=false; }
 }
 window.generarReporteFecha = generarReporteFecha;
+</script>
+
+<script>
+/* ===== MATERIA PRIMA 2026 — colección separada, no toca planta1_papel_inventario ===== */
+var items26 = [];
+var _m26Datos = [];
+var _m26Unsub = null;
+
+function _m26Val(v){return _xlsVal(v);}
+
+function renderMat26(){
+  var q=(document.getElementById('mat26S')?document.getElementById('mat26S').value:'').toUpperCase();
+  var list=document.getElementById('mat26List');
+  var filtrados=items26.filter(function(i){
+    return !q || (i.pn&&i.pn.toUpperCase().includes(q)) || (i.familia&&i.familia.toUpperCase().includes(q)) || (i.desc&&i.desc.toUpperCase().includes(q));
+  });
+  document.getElementById('mat26Empty').style.display = items26.length===0 ? 'block' : 'none';
+  list.innerHTML = filtrados.map(function(i){
+    return '<div class="ir-row" style="display:grid;grid-template-columns:1.4fr 1fr .8fr .8fr .8fr;gap:6px;padding:8px 4px;border-bottom:1px solid var(--border);font-size:11px;align-items:center">'
+      +'<div style="font-family:monospace;color:var(--text)">'+i.pn+'<div style="font-size:9px;color:var(--text2);font-family:\'DM Sans\',sans-serif">'+(i.desc||'')+'</div></div>'
+      +'<div style="text-align:center;color:var(--text2)">'+(i.familia||'')+'</div>'
+      +'<div style="text-align:center;color:var(--text2)">'+(i.ubicacion||'')+'</div>'
+      +'<div style="text-align:right;font-family:monospace">'+(i.stock||0)+'</div>'
+      +'<div style="text-align:right;font-family:monospace;color:var(--text2)">$'+(i.precio||0)+'</div>'
+      +'</div>';
+  }).join('');
+}
+window.renderMat26 = renderMat26;
+
+function startSyncMat26(){
+  if(!db) return;
+  _m26Unsub = db.collection('planta1_materiales_2026').onSnapshot(function(snap){
+    var arr=[]; snap.forEach(function(d){arr.push(d.data());});
+    items26 = arr;
+    renderMat26();
+  }, function(){});
+}
+window.startSyncMat26 = startSyncMat26;
+
+function getDocId26(pn, ubicacion){ return (pn+'||'+ubicacion).replace(/[\/\s]/g,'_'); }
+
+function abrirCargarExcel26(){
+  document.getElementById('modalCargarExcel26').style.display='flex';
+  document.getElementById('m26-p1').style.display='block';
+  document.getElementById('m26-p2').style.display='none';
+  document.getElementById('m26-p3').style.display='none';
+  document.getElementById('m26File').value='';
+}
+window.abrirCargarExcel26 = abrirCargarExcel26;
+function cerrarCargarExcel26(){ document.getElementById('modalCargarExcel26').style.display='none'; }
+window.cerrarCargarExcel26 = cerrarCargarExcel26;
+
+function m26LeerArchivo(file){
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var wb; try{ wb=XLSX.read(e.target.result,{type:'array'}); }catch(err){ toast('No se pudo leer el archivo','err'); return; }
+    var hoja=wb.SheetNames[0];
+    var raw=XLSX.utils.sheet_to_json(wb.Sheets[hoja],{header:1,defval:null});
+    var headerIdx=0;
+    for(var ri=0; ri<Math.min(raw.length,10); ri++){
+      var r=raw[ri];
+      for(var ci=0; ci<r.length; ci++){ if(r[ci]&&r[ci].toString().toLowerCase().includes('part')){headerIdx=ri;break;} }
+      if(headerIdx===ri&&ri>0) break;
+    }
+    var headers=raw[headerIdx];
+    var rows=raw.slice(headerIdx+1).map(function(r){ var o={}; headers.forEach(function(h,i){ if(h) o[h]=r[i]!==undefined?r[i]:null; }); return o; })
+      .filter(function(r){ return Object.values(r).some(function(v){return v!==null;}); });
+    if(!rows.length){ toast('Hoja vacía','err'); return; }
+    var hs=Object.keys(rows[0]), colPN=null, colFam=null, colDesc=null, colUbic=null, colInv=null, colPrecio=null;
+    hs.forEach(function(h){ var hl=h.toLowerCase().trim();
+      if(!colPN&&(hl.includes('part')||hl==='pn')) colPN=h;
+      if(!colFam&&hl.includes('famil')) colFam=h;
+      if(!colDesc&&hl.includes('desc')) colDesc=h;
+      if(!colUbic&&(hl.includes('ubicaci')||hl.includes('edificio'))) colUbic=h;
+      if(!colInv&&(hl.includes('invent')||hl.includes('stock'))) colInv=h;
+      if(!colPrecio&&(hl.includes('precio')||hl.includes('price')||hl.includes('unit'))) colPrecio=h;
+    });
+    if(!colPN||!colDesc){ toast('No se encontraron columnas Part Number/Descripción','err'); return; }
+    var validas=[], err=0;
+    rows.forEach(function(row){
+      var pn=row[colPN];
+      if(!pn||pn.toString().trim()===''||pn.toString().trim()==='Part Number') return;
+      var desc=row[colDesc]?row[colDesc].toString().trim():'';
+      if(!desc){ err++; return; }
+      validas.push({
+        pn: pn.toString().trim(),
+        familia: (colFam&&row[colFam])?row[colFam].toString().trim():'Otro',
+        desc: desc,
+        ubicacion: (colUbic&&row[colUbic])?row[colUbic].toString().trim():'P1',
+        stock: _m26Val(colInv?row[colInv]:0),
+        precio: _m26Val(colPrecio?row[colPrecio]:0)
+      });
+    });
+    _m26Datos = validas;
+    document.getElementById('m26CntOk').textContent = validas.length;
+    document.getElementById('m26CntErr').textContent = err;
+    var tbody=document.getElementById('m26PreviewBody'); tbody.innerHTML='';
+    validas.slice(0,8).forEach(function(item){
+      var tr=document.createElement('tr'); tr.style.borderBottom='1px solid var(--border)';
+      tr.innerHTML='<td style="padding:5px 8px;color:var(--text)">'+item.pn+'</td><td style="padding:5px 8px;color:var(--text2)">'+item.familia+'</td><td style="padding:5px 8px;text-align:right;color:var(--text)">'+item.stock+'</td>';
+      tbody.appendChild(tr);
+    });
+    document.getElementById('m26-p1').style.display='none';
+    document.getElementById('m26-p2').style.display='block';
+  };
+  reader.readAsArrayBuffer(file);
+}
+window.m26LeerArchivo = m26LeerArchivo;
+
+function m26Confirmar(){
+  if(!_m26Datos.length) return;
+  document.getElementById('m26-p2').style.display='none';
+  document.getElementById('m26-p3').style.display='block';
+  document.getElementById('m26Msg').textContent='Guardando '+_m26Datos.length+' partes (agregando, sin borrar nada existente)...';
+  if(!db){ document.getElementById('m26Spinner').textContent='⚠️'; document.getElementById('m26Msg').textContent='Sin conexión a Firebase.'; return; }
+  var batches=[], cur=db.batch(), cnt=0;
+  _m26Datos.forEach(function(item){
+    cur.set(db.collection('planta1_materiales_2026').doc(getDocId26(item.pn,item.ubicacion)), item, {merge:true});
+    cnt++; if(cnt===400){ batches.push(cur); cur=db.batch(); cnt=0; }
+  });
+  if(cnt>0) batches.push(cur);
+  batches.reduce(function(p,b){ return p.then(function(){ return b.commit(); }); }, Promise.resolve())
+    .then(function(){
+      document.getElementById('m26Spinner').textContent='✅';
+      document.getElementById('m26Msg').textContent=_m26Datos.length+' partes cargadas correctamente.';
+      toast('Materia Prima 2026 actualizada','ok');
+      setTimeout(cerrarCargarExcel26, 1800);
+    })
+    .catch(function(err){
+      document.getElementById('m26Spinner').textContent='⚠️';
+      document.getElementById('m26Msg').textContent='Error: '+err.message;
+    });
+}
+window.m26Confirmar = m26Confirmar;
+
+var _launch26 = window.launch;
+window.launch = function(){
+  if (typeof _launch26 === 'function') _launch26();
+  startSyncMat26();
+};
 </script>
 
 </body>
