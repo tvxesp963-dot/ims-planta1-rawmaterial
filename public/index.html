@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260907a";
+var APP_VERSION = "20260907b";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -360,11 +360,50 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div class="ft" onclick="setFam('SRRP',this)">SRRP</div>
         <div class="ft" onclick="setFam('SBS',this)">SBS</div>
         <div class="ft" onclick="setFam('CHIPBOARD',this)">CHIPBOARD</div>
+        <div class="ft" onclick="setFam('OFFSET',this)">OFFSET</div>
+        <div class="ft" onclick="setFam('GLOSS C2S',this)">GLOSS C2S</div>
+        <div class="ft" onclick="setFam('FLAUTE',this)">FLAUTE</div>
+        <div class="ft" onclick="setFam('CCNB',this)">CCNB</div>
+        <div class="ft" onclick="setFam('CCWB',this)">CCWB</div>
+        <div class="ft" onclick="setFam('SBS C1S',this)">SBS C1S</div>
+        <div class="ft" onclick="setFam('RPET / THERMO',this)">RPET/THERMO</div>
+        <div class="ft" onclick="setFam('THERMAL',this)">THERMAL</div>
+        <div class="ft" onclick="setFam('LABEL',this)">LABEL</div>
+        <div class="ft" onclick="setFam('BOX',this)">BOX</div>
       </div>
       <button onclick="exportExcel()" style="background:var(--green2);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif" id="t-btnExcel">↓ Excel</button>
+      <button onclick="abrirAgregarExcel()" style="background:var(--accent2);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">↑ Agregar Excel</button>
     </div>
     <div class="ir-head"><div id="t-colPN">Part Number</div><div style="text-align:center" id="t-colFamilia">Familia</div><div style="text-align:center" id="t-colEdificio">Edificio</div><div style="text-align:right" id="t-colStock">Stock</div><div style="text-align:right" id="t-colPrecio">Precio USD</div></div>
     <div id="invList"></div>
+  </div>
+
+  <div id="modalAgregarExcel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:750;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
+    <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:1.4rem 1.1rem 2.2rem;border-top:1px solid var(--border2);max-height:90vh;overflow-y:auto">
+      <div style="width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 1rem"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700">↑ Agregar Excel</div>
+        <button onclick="cerrarAgregarExcel()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <div id="ag-p1">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Columnas esperadas: <b>Familia, Part Number, Descripción, Ubicación, Inventario al..., Precio Unit ($)</b>. Esto <b>agrega o actualiza</b> partes sobre el inventario actual — nunca borra nada.</div>
+        <input type="file" id="agFile" accept=".xlsx,.xls" style="margin-bottom:1rem;color:var(--text);font-size:12px" onchange="agLeerArchivo(this.files[0])">
+      </div>
+      <div id="ag-p2" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--accent)" id="agCntOk">0</div><div style="font-size:10px;color:var(--text2)">Partes válidas</div></div>
+          <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)" id="agCntErr">0</div><div style="font-size:10px;color:var(--text2)">Con error</div></div>
+        </div>
+        <div style="max-height:200px;overflow-y:auto;margin-bottom:1rem;border:1px solid var(--border);border-radius:8px">
+          <table style="width:100%;border-collapse:collapse;font-size:11px"><tbody id="agPreviewBody"></tbody></table>
+        </div>
+        <button id="agBtnConf" onclick="agConfirmar()" class="btn-l">✓ Confirmar carga</button>
+      </div>
+      <div id="ag-p3" style="display:none;text-align:center;padding:2rem 0">
+        <div style="font-size:36px;margin-bottom:.6rem" id="agSpinner">⏳</div>
+        <div style="font-size:13px;color:var(--text2)" id="agMsg">Guardando...</div>
+      </div>
+    </div>
   </div>
 
   <div id="pgMov" class="page">
@@ -458,48 +497,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     </div>
     <div style="overflow-x:auto"><table id="transitoTabla" style="border-collapse:collapse;font-size:10px;width:100%;white-space:nowrap"></table></div>
     <div id="transitoDetalle" style="display:none;margin-top:.7rem"></div>
-  </div>
-
-  <div id="pgMat26" class="page">
-    <div class="sh" style="display:flex;justify-content:space-between;align-items:center">
-      <span>🗂️ Materia Prima 2026</span>
-      <button onclick="abrirCargarExcel26()" style="background:var(--green2);color:#fff;border:none;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif">↑ Cargar Excel</button>
-    </div>
-    <div class="sw"><input class="si" id="mat26S" style="text-transform:uppercase" placeholder="Buscar Familia, Part Number o Descripción..." autocomplete="off" oninput="this.value=this.value.toUpperCase();renderMat26()"><span class="si-ic">🔍</span></div>
-    <div id="mat26Empty" style="display:none;padding:2rem;text-align:center;color:var(--text2)">
-      <div style="font-size:36px;margin-bottom:.6rem">🗂️</div>
-      <div style="font-size:13px">Sin materiales cargados todavía. Usa "Cargar Excel" para empezar.</div>
-    </div>
-    <div class="ir-head"><div>Part Number</div><div style="text-align:center">Familia</div><div style="text-align:center">Ubicación</div><div style="text-align:right">Stock</div><div style="text-align:right">Precio USD</div></div>
-    <div id="mat26List"></div>
-  </div>
-
-  <div id="modalCargarExcel26" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:750;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
-    <div style="background:var(--bg2);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:1.4rem 1.1rem 2.2rem;border-top:1px solid var(--border2);max-height:90vh;overflow-y:auto">
-      <div style="width:36px;height:3px;border-radius:2px;background:var(--border2);margin:0 auto 1rem"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <div style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700">🗂️ Cargar Excel — Materia Prima 2026</div>
-        <button onclick="cerrarCargarExcel26()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">✕</button>
-      </div>
-      <div id="m26-p1">
-        <div style="font-size:12px;color:var(--text2);margin-bottom:1rem;line-height:1.5">Columnas esperadas: <b>Familia, Part Number, Descripción, Ubicación, Inventario al..., Precio Unit ($)</b>. Esto <b>agrega o actualiza</b> partes — nunca borra lo que ya está cargado aquí.</div>
-        <input type="file" id="m26File" accept=".xlsx,.xls" style="margin-bottom:1rem;color:var(--text);font-size:12px" onchange="m26LeerArchivo(this.files[0])">
-      </div>
-      <div id="m26-p2" style="display:none">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">
-          <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--accent)" id="m26CntOk">0</div><div style="font-size:10px;color:var(--text2)">Partes válidas</div></div>
-          <div style="background:var(--bg3);border-radius:8px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:700;color:var(--amber)" id="m26CntErr">0</div><div style="font-size:10px;color:var(--text2)">Con error</div></div>
-        </div>
-        <div style="max-height:200px;overflow-y:auto;margin-bottom:1rem;border:1px solid var(--border);border-radius:8px">
-          <table style="width:100%;border-collapse:collapse;font-size:11px"><tbody id="m26PreviewBody"></tbody></table>
-        </div>
-        <button id="m26BtnConf" onclick="m26Confirmar()" class="btn-l">✓ Confirmar carga</button>
-      </div>
-      <div id="m26-p3" style="display:none;text-align:center;padding:2rem 0">
-        <div style="font-size:36px;margin-bottom:.6rem" id="m26Spinner">⏳</div>
-        <div style="font-size:13px;color:var(--text2)" id="m26Msg">Guardando...</div>
-      </div>
-    </div>
   </div>
 
   <div id="modalEmbarque" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:750;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)">
@@ -679,7 +676,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="bni" onclick="goPage('pgQR',this)"><span class="bni-i">📷</span>QR</button>
     <button class="bni" onclick="goPage('pgHist',this)"><span class="bni-i">📋</span><span id="t-navHist">Hist.</span></button>
     <button class="bni" onclick="goPage('pgTransito',this)"><span class="bni-i">🚢</span><span id="t-navTransito">Tránsito</span></button>
-    <button class="bni" onclick="goPage('pgMat26',this)"><span class="bni-i">🗂️</span><span>Mat.26</span></button>
     <button class="bni" id="navPlan" onclick="goPage('pgPlan',this)"><span class="bni-i">⚙️</span><span id="t-navPlan">Plan</span></button>
     <button class="bni" id="navAdmin" onclick="goPage('pgAdmin',this)"><span class="bni-i">⚙️</span><span id="t-navAdmin">Admin</span></button>
   </div>
@@ -3266,7 +3262,7 @@ function xlsConfirmar(){
   }
 }
 </script>
-<div id="modalEdit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem;overflow-y:auto"><div style="background:var(--bg2);border-radius:14px;padding:1.4rem 1.2rem;width:100%;max-width:540px;border:1px solid var(--border2);max-height:92vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><span style="font-family:Rajdhani,sans-serif;font-size:17px;font-weight:700" id="t-editarParte">Editar Parte</span><button onclick="closeEdit()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">X</button></div><div style="font-size:11px;font-weight:600;color:#4DA6FF;letter-spacing:.8px;margin-bottom:6px" id="t-catalogo">📋 CATÁLOGO</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPartNumber">Part Number</label><input class="fi" id="editPN" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblFamilia2">Familia</label><select class="fi" id="editFam" style="margin:0"><option value="PET FILM">PET FILM</option><option value="CORRUGADO">CORRUGADO</option><option value="SSGPR">SSGPR</option><option value="SRIV VE">SRIV VE</option><option value="SRRP">SRRP</option><option value="SBS">SBS</option><option value="CHIPBOARD">CHIPBOARD</option><option value="Otro">Otro</option></select></div></div><div style="margin-bottom:14px"><label class="fl" style="margin-bottom:2px" id="t-lblDescripcion2">Descripción</label><input class="fi" id="editDesc" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;margin:0"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPzasPallet2">Piezas por pallet</label><input class="fi" id="editPzasPallet" type="number" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEspec">Especificación</label><input class="fi" id="editSpec" type="text" style="margin:0"></div></div><div style="font-size:11px;font-weight:600;color:#00e676;letter-spacing:.8px;margin-bottom:6px" id="t-inventarioLbl">📦 INVENTARIO</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px"><div><label class="fl" style="margin-bottom:2px" id="t-lblInvInicial2">Inv. inicial</label><input class="fi" id="editInicial" type="number" oninput="_editRecalcStock()" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEntradas2">Entradas</label><input class="fi" id="editEntradas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#00e676;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblSalidas2">Salidas</label><input class="fi" id="editSalidas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#ff6b6b;margin:0"></div></div><div style="background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.3);border-radius:7px;padding:7px 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--text2)" id="t-stockCalculado">Stock actual (calculado)</span><span id="editStockCalc" style="font-family:monospace;font-size:15px;font-weight:700;color:#4DA6FF">0 plt</span></div><div style="font-size:11px;font-weight:600;color:#FFBA00;letter-spacing:.8px;margin-bottom:6px" id="t-precioEstatusLbl">💲 PRECIO Y ESTATUS</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPrecioUSD">Precio USD</label><input class="fi" id="editPrecio" type="number" step="0.0001" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEstatus">Estatus</label><select class="fi" id="editEstatus" style="margin:0"><option value="DONE">DONE</option><option value="Pendiente">Pendiente</option><option value="Archivado">Archivado</option></select></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEdificio3">Edificio</label><select class="fi" id="editUbic" style="margin:0"><option value="P1">P1</option><option value="P5">P5</option><option value="P6">P6</option></select></div></div><div style="padding-top:12px;border-top:1px solid var(--border2);display:flex;gap:8px;align-items:center"><button onclick="deleteFromEdit()" style="padding:10px 12px;background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.4);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:600;cursor:pointer" id="t-btnEliminar">🗑️ Eliminar</button><div style="flex:1"></div><button onclick="closeEdit()" style="padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;cursor:pointer" id="t-btnCancelar2">Cancelar</button><button onclick="saveEdit()" style="padding:10px 18px;background:var(--accent2);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer" id="t-btnGuardar2">💾 Guardar</button></div></div></div>
+<div id="modalEdit" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:1rem;overflow-y:auto"><div style="background:var(--bg2);border-radius:14px;padding:1.4rem 1.2rem;width:100%;max-width:540px;border:1px solid var(--border2);max-height:92vh;overflow-y:auto"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem"><span style="font-family:Rajdhani,sans-serif;font-size:17px;font-weight:700" id="t-editarParte">Editar Parte</span><button onclick="closeEdit()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer">X</button></div><div style="font-size:11px;font-weight:600;color:#4DA6FF;letter-spacing:.8px;margin-bottom:6px" id="t-catalogo">📋 CATÁLOGO</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPartNumber">Part Number</label><input class="fi" id="editPN" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblFamilia2">Familia</label><select class="fi" id="editFam" style="margin:0"><option value="PET FILM">PET FILM</option><option value="CORRUGADO">CORRUGADO</option><option value="SSGPR">SSGPR</option><option value="SRIV VE">SRIV VE</option><option value="SRRP">SRRP</option><option value="SBS">SBS</option><option value="CHIPBOARD">CHIPBOARD</option><option value="OFFSET">OFFSET</option><option value="GLOSS C2S">GLOSS C2S</option><option value="FLAUTE">FLAUTE</option><option value="CCNB">CCNB</option><option value="CCWB">CCWB</option><option value="SBS C1S">SBS C1S</option><option value="RPET / THERMO">RPET / THERMO</option><option value="THERMAL">THERMAL</option><option value="LABEL">LABEL</option><option value="BOX">BOX</option><option value="Otro">Otro</option></select></div></div><div style="margin-bottom:14px"><label class="fl" style="margin-bottom:2px" id="t-lblDescripcion2">Descripción</label><input class="fi" id="editDesc" type="text" oninput="this.value=this.value.toUpperCase()" style="text-transform:uppercase;margin:0"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPzasPallet2">Piezas por pallet</label><input class="fi" id="editPzasPallet" type="number" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEspec">Especificación</label><input class="fi" id="editSpec" type="text" style="margin:0"></div></div><div style="font-size:11px;font-weight:600;color:#00e676;letter-spacing:.8px;margin-bottom:6px" id="t-inventarioLbl">📦 INVENTARIO</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:6px"><div><label class="fl" style="margin-bottom:2px" id="t-lblInvInicial2">Inv. inicial</label><input class="fi" id="editInicial" type="number" oninput="_editRecalcStock()" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEntradas2">Entradas</label><input class="fi" id="editEntradas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#00e676;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblSalidas2">Salidas</label><input class="fi" id="editSalidas" type="number" oninput="_editRecalcStock()" style="font-family:monospace;color:#ff6b6b;margin:0"></div></div><div style="background:rgba(77,166,255,.08);border:1px solid rgba(77,166,255,.3);border-radius:7px;padding:7px 10px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--text2)" id="t-stockCalculado">Stock actual (calculado)</span><span id="editStockCalc" style="font-family:monospace;font-size:15px;font-weight:700;color:#4DA6FF">0 plt</span></div><div style="font-size:11px;font-weight:600;color:#FFBA00;letter-spacing:.8px;margin-bottom:6px" id="t-precioEstatusLbl">💲 PRECIO Y ESTATUS</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px"><div><label class="fl" style="margin-bottom:2px" id="t-lblPrecioUSD">Precio USD</label><input class="fi" id="editPrecio" type="number" step="0.0001" style="font-family:monospace;margin:0"></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEstatus">Estatus</label><select class="fi" id="editEstatus" style="margin:0"><option value="DONE">DONE</option><option value="Pendiente">Pendiente</option><option value="Archivado">Archivado</option></select></div><div><label class="fl" style="margin-bottom:2px" id="t-lblEdificio3">Edificio</label><select class="fi" id="editUbic" style="margin:0"><option value="P1">P1</option><option value="P5">P5</option><option value="P6">P6</option></select></div></div><div style="padding-top:12px;border-top:1px solid var(--border2);display:flex;gap:8px;align-items:center"><button onclick="deleteFromEdit()" style="padding:10px 12px;background:rgba(255,68,68,.12);border:1px solid rgba(255,68,68,.4);border-radius:8px;color:#ff6b6b;font-size:12px;font-weight:600;cursor:pointer" id="t-btnEliminar">🗑️ Eliminar</button><div style="flex:1"></div><button onclick="closeEdit()" style="padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-size:13px;cursor:pointer" id="t-btnCancelar2">Cancelar</button><button onclick="saveEdit()" style="padding:10px 18px;background:var(--accent2);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer" id="t-btnGuardar2">💾 Guardar</button></div></div></div>
 
 
 <!-- ===== MODAL: IMPORTAR PRECIOS ===== -->
@@ -3920,59 +3916,22 @@ async function generarReporteFecha(){
   } finally { btn.disabled=false; }
 }
 window.generarReporteFecha = generarReporteFecha;
-</script>
 
-<script>
-/* ===== MATERIA PRIMA 2026 — colección separada, no toca planta1_papel_inventario ===== */
-var items26 = [];
-var _m26Datos = [];
-var _m26Unsub = null;
+/* ===== AGREGAR EXCEL (Inv.) — aditivo, nunca borra, escribe en planta1_papel_inventario ===== */
+var _agDatos = [];
 
-function _m26Val(v){return _xlsVal(v);}
-
-function renderMat26(){
-  var q=(document.getElementById('mat26S')?document.getElementById('mat26S').value:'').toUpperCase();
-  var list=document.getElementById('mat26List');
-  var filtrados=items26.filter(function(i){
-    return !q || (i.pn&&i.pn.toUpperCase().includes(q)) || (i.familia&&i.familia.toUpperCase().includes(q)) || (i.desc&&i.desc.toUpperCase().includes(q));
-  });
-  document.getElementById('mat26Empty').style.display = items26.length===0 ? 'block' : 'none';
-  list.innerHTML = filtrados.map(function(i){
-    return '<div class="ir-row" style="display:grid;grid-template-columns:1.4fr 1fr .8fr .8fr .8fr;gap:6px;padding:8px 4px;border-bottom:1px solid var(--border);font-size:11px;align-items:center">'
-      +'<div style="font-family:monospace;color:var(--text)">'+i.pn+'<div style="font-size:9px;color:var(--text2);font-family:\'DM Sans\',sans-serif">'+(i.desc||'')+'</div></div>'
-      +'<div style="text-align:center;color:var(--text2)">'+(i.familia||'')+'</div>'
-      +'<div style="text-align:center;color:var(--text2)">'+(i.ubicacion||'')+'</div>'
-      +'<div style="text-align:right;font-family:monospace">'+(i.stock||0)+'</div>'
-      +'<div style="text-align:right;font-family:monospace;color:var(--text2)">$'+(i.precio||0)+'</div>'
-      +'</div>';
-  }).join('');
+function abrirAgregarExcel(){
+  document.getElementById('modalAgregarExcel').style.display='flex';
+  document.getElementById('ag-p1').style.display='block';
+  document.getElementById('ag-p2').style.display='none';
+  document.getElementById('ag-p3').style.display='none';
+  document.getElementById('agFile').value='';
 }
-window.renderMat26 = renderMat26;
+window.abrirAgregarExcel = abrirAgregarExcel;
+function cerrarAgregarExcel(){ document.getElementById('modalAgregarExcel').style.display='none'; }
+window.cerrarAgregarExcel = cerrarAgregarExcel;
 
-function startSyncMat26(){
-  if(!db) return;
-  _m26Unsub = db.collection('planta1_materiales_2026').onSnapshot(function(snap){
-    var arr=[]; snap.forEach(function(d){arr.push(d.data());});
-    items26 = arr;
-    renderMat26();
-  }, function(){});
-}
-window.startSyncMat26 = startSyncMat26;
-
-function getDocId26(pn, ubicacion){ return (pn+'||'+ubicacion).replace(/[\/\s]/g,'_'); }
-
-function abrirCargarExcel26(){
-  document.getElementById('modalCargarExcel26').style.display='flex';
-  document.getElementById('m26-p1').style.display='block';
-  document.getElementById('m26-p2').style.display='none';
-  document.getElementById('m26-p3').style.display='none';
-  document.getElementById('m26File').value='';
-}
-window.abrirCargarExcel26 = abrirCargarExcel26;
-function cerrarCargarExcel26(){ document.getElementById('modalCargarExcel26').style.display='none'; }
-window.cerrarCargarExcel26 = cerrarCargarExcel26;
-
-function m26LeerArchivo(file){
+function agLeerArchivo(file){
   if(!file) return;
   var reader=new FileReader();
   reader.onload=function(e){
@@ -4005,63 +3964,70 @@ function m26LeerArchivo(file){
       if(!pn||pn.toString().trim()===''||pn.toString().trim()==='Part Number') return;
       var desc=row[colDesc]?row[colDesc].toString().trim():'';
       if(!desc){ err++; return; }
+      var ubic=(colUbic&&row[colUbic])?row[colUbic].toString().trim():'P1';
       validas.push({
         pn: pn.toString().trim(),
-        familia: (colFam&&row[colFam])?row[colFam].toString().trim():'Otro',
         desc: desc,
-        ubicacion: (colUbic&&row[colUbic])?row[colUbic].toString().trim():'P1',
-        stock: _m26Val(colInv?row[colInv]:0),
-        precio: _m26Val(colPrecio?row[colPrecio]:0)
+        spec: '',
+        familia: (colFam&&row[colFam])?row[colFam].toString().trim():'Otro',
+        precio: _xlsVal(colPrecio?row[colPrecio]:0),
+        pzasPallet: 0,
+        ubicacion: ubic,
+        inicial: Math.round(_xlsVal(colInv?row[colInv]:0)),
+        actual: Math.round(_xlsVal(colInv?row[colInv]:0)),
+        estatus: 'DONE', entradas: 0, salidas: 0,
+        historial: [{tipo:'INI', fecha:new Date().toISOString(), qty:Math.round(_xlsVal(colInv?row[colInv]:0)), loc:ubic, user:user?user.name:'Sistema', ref:'Agregar Excel'}]
       });
     });
-    _m26Datos = validas;
-    document.getElementById('m26CntOk').textContent = validas.length;
-    document.getElementById('m26CntErr').textContent = err;
-    var tbody=document.getElementById('m26PreviewBody'); tbody.innerHTML='';
+    _agDatos = validas;
+    document.getElementById('agCntOk').textContent = validas.length;
+    document.getElementById('agCntErr').textContent = err;
+    var tbody=document.getElementById('agPreviewBody'); tbody.innerHTML='';
     validas.slice(0,8).forEach(function(item){
       var tr=document.createElement('tr'); tr.style.borderBottom='1px solid var(--border)';
-      tr.innerHTML='<td style="padding:5px 8px;color:var(--text)">'+item.pn+'</td><td style="padding:5px 8px;color:var(--text2)">'+item.familia+'</td><td style="padding:5px 8px;text-align:right;color:var(--text)">'+item.stock+'</td>';
+      tr.innerHTML='<td style="padding:5px 8px;color:var(--text)">'+item.pn+'</td><td style="padding:5px 8px;color:var(--text2)">'+item.familia+'</td><td style="padding:5px 8px;text-align:right;color:var(--text)">'+item.actual+'</td>';
       tbody.appendChild(tr);
     });
-    document.getElementById('m26-p1').style.display='none';
-    document.getElementById('m26-p2').style.display='block';
+    document.getElementById('ag-p1').style.display='none';
+    document.getElementById('ag-p2').style.display='block';
   };
   reader.readAsArrayBuffer(file);
 }
-window.m26LeerArchivo = m26LeerArchivo;
+window.agLeerArchivo = agLeerArchivo;
 
-function m26Confirmar(){
-  if(!_m26Datos.length) return;
-  document.getElementById('m26-p2').style.display='none';
-  document.getElementById('m26-p3').style.display='block';
-  document.getElementById('m26Msg').textContent='Guardando '+_m26Datos.length+' partes (agregando, sin borrar nada existente)...';
-  if(!db){ document.getElementById('m26Spinner').textContent='⚠️'; document.getElementById('m26Msg').textContent='Sin conexión a Firebase.'; return; }
+function agConfirmar(){
+  if(!_agDatos.length) return;
+  document.getElementById('ag-p2').style.display='none';
+  document.getElementById('ag-p3').style.display='block';
+  document.getElementById('agMsg').textContent='Guardando '+_agDatos.length+' partes (agregando sobre el inventario actual)...';
+  _agDatos.forEach(function(item){
+    var idx = items.findIndex(function(i){ return i.pn===item.pn && i.desc===item.desc && i.ubicacion===item.ubicacion; });
+    if(idx>=0) items[idx]=item; else items.push(item);
+  });
+  saveLocal(); updateDash(); renderInv(); renderHist(); renderLocMap();
+  if(!db){ document.getElementById('agSpinner').textContent='✅'; document.getElementById('agMsg').textContent=_agDatos.length+' partes cargadas (local).'; setTimeout(cerrarAgregarExcel,1800); return; }
   var batches=[], cur=db.batch(), cnt=0;
-  _m26Datos.forEach(function(item){
-    cur.set(db.collection('planta1_materiales_2026').doc(getDocId26(item.pn,item.ubicacion)), item, {merge:true});
+  _agDatos.forEach(function(item){
+    cur.set(db.collection('planta1_papel_inventario').doc(getDocId(item.pn,item.desc,item.ubicacion)), item, {merge:true});
     cnt++; if(cnt===400){ batches.push(cur); cur=db.batch(); cnt=0; }
   });
   if(cnt>0) batches.push(cur);
   batches.reduce(function(p,b){ return p.then(function(){ return b.commit(); }); }, Promise.resolve())
     .then(function(){
-      document.getElementById('m26Spinner').textContent='✅';
-      document.getElementById('m26Msg').textContent=_m26Datos.length+' partes cargadas correctamente.';
-      toast('Materia Prima 2026 actualizada','ok');
-      setTimeout(cerrarCargarExcel26, 1800);
+      document.getElementById('agSpinner').textContent='✅';
+      document.getElementById('agMsg').textContent=_agDatos.length+' partes cargadas correctamente.';
+      toast('Inventario actualizado','ok');
+      setTimeout(cerrarAgregarExcel, 1800);
     })
     .catch(function(err){
-      document.getElementById('m26Spinner').textContent='⚠️';
-      document.getElementById('m26Msg').textContent='Error: '+err.message;
+      document.getElementById('agSpinner').textContent='⚠️';
+      document.getElementById('agMsg').textContent='Local OK. Firebase: '+err.message;
     });
 }
-window.m26Confirmar = m26Confirmar;
-
-var _launch26 = window.launch;
-window.launch = function(){
-  if (typeof _launch26 === 'function') _launch26();
-  startSyncMat26();
-};
+window.agConfirmar = agConfirmar;
 </script>
+
+
 
 </body>
 </html>
