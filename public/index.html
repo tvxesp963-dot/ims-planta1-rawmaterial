@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260907c";
+var APP_VERSION = "20260907d";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -1934,11 +1934,11 @@ function renderMonitorStock() {
   let lista;
   if(STOCK_MIN_MODO==='auto'){
     lista = [...items].sort((a,b)=>(parseFloat(a.actual)||0)-(parseFloat(b.actual)||0)).slice(0,10)
-      .map(i=>({pn:i.pn, desc:i.desc, stock:parseFloat(i.actual)||0}));
+      .map(i=>({pn:i.pn, desc:(i.desc||'')+(i.spec?' · '+i.spec:''), stock:parseFloat(i.actual)||0}));
   } else {
     lista = STOCK_MIN_PNS_MANUAL.map(pn=>{
       const item = items.find(i=>(i.pn||'').toUpperCase()===pn.toUpperCase());
-      return {pn, desc:item?item.desc:'—', stock:item?(parseFloat(item.actual)||0):0};
+      return {pn, desc:item?((item.desc||'')+(item.spec?' · '+item.spec:'')):'—', stock:item?(parseFloat(item.actual)||0):0};
     }).sort((a,b)=>a.pn.localeCompare(b.pn));
   }
   function color(s){ return s>=STOCK_MIN_LIMITE?'var(--green)':s>=alerta?'var(--amber)':'#ff6b6b'; }
