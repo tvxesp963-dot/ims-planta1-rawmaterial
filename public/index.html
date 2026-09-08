@@ -11,7 +11,7 @@
 /* ===== CONTROL DE VERSION (evita que celulares/laptops se queden con version vieja en cache) =====
    Cada vez que subas un index.html actualizado, cambia este numero (ej: 20260711).
    El sistema detecta el cambio y recarga automaticamente la version nueva. */
-var APP_VERSION = "20260908a";
+var APP_VERSION = "20260908b";
 (function(){
   try{
     var key = 'ims_p1p_version';
@@ -564,6 +564,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="ac" onclick="clearMovs()"><div class="ac-i">🗑️</div><div class="ac-l" id="t-acLimpiarMovs">Limpiar movs.</div><div class="ac-s" id="t-acSoloAdmin">Solo Admin</div></div>
       <div class="ac" onclick="migrateToFirestore()" style="border-color:#2ecc71"><div class="ac-i">☁️</div><div class="ac-l">Sync Firestore</div><div class="ac-s" id="t-acSyncSub">Subir todos los items</div></div>
       <div class="ac" onclick="cleanDuplicates()" style="border-color:#e74c3c"><div class="ac-i">🧹</div><div class="ac-l" id="t-acLimpiarDup">Limpiar duplicados</div><div class="ac-s" id="t-acLimpiarDupSub">Eliminar IDs viejos</div></div>
+      <div class="ac" onclick="cleanDuplicatesPorPN()" style="border-color:#e74c3c"><div class="ac-i">🧹</div><div class="ac-l">Limpiar dup. por PN+Ubic.</div><div class="ac-s">Junta registros del mismo PN+edificio</div></div>
       <div class="ac" onclick="abrirReporteFecha()" style="border-color:rgba(37,99,235,.4)"><div class="ac-i">📅</div><div class="ac-l">Reporte a fecha</div><div class="ac-s">Inventario histórico</div></div>
       <div class="ac" onclick="resetStock()"><div class="ac-i">🔄</div><div class="ac-l" id="t-acReset">Reset stock</div><div class="ac-s" id="t-acResetSub">Volver a inicial</div></div>
       <div class="ac" onclick="abrirImportPrecios()" style="border-color:rgba(255,179,0,.4)"><div class="ac-i">💲</div><div class="ac-l" id="t-acImportPrecios">Importar Precios</div><div class="ac-s" id="t-acImportPreciosSub">Desde Excel PN+Price</div></div>
@@ -2746,6 +2747,41 @@ async function cleanDuplicates() {
   } catch(e) { toast('Error: ' + e.message,'err'); console.error(e); }
 }
 window.cleanDuplicates = cleanDuplicates;
+
+async function cleanDuplicatesPorPN() {
+  if (!db) { toast('Sin conexión a Firebase','err'); return; }
+  if (!confirm('¿Eliminar registros duplicados que comparten el mismo Part Number + Ubicación (se conserva el más completo)?')) return;
+  toast('Buscando duplicados por PN+Ubicación...','info');
+  try {
+    const snap = await db.collection('planta1_papel_inventario').get();
+    const grupos = {};
+    snap.forEach(d => {
+      const data = d.data();
+      const key = (data.pn||'').trim().toUpperCase()+'||'+(data.ubicacion||'').trim().toUpperCase();
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push({ref:d.ref, id:d.id, data});
+    });
+    const toDelete = [];
+    Object.values(grupos).forEach(grupo => {
+      if (grupo.length <= 1) return;
+      grupo.sort((a,b) => {
+        const pa = (parseFloat(a.data.pzasPallet)||0) > 0 ? 1 : 0;
+        const pb = (parseFloat(b.data.pzasPallet)||0) > 0 ? 1 : 0;
+        if (pa !== pb) return pb - pa;
+        return (b.data.actual||0) - (a.data.actual||0);
+      });
+      grupo.slice(1).forEach(g => toDelete.push(g.ref));
+    });
+    if (toDelete.length === 0) { toast('Sin duplicados por PN+Ubicación ✓','ok'); return; }
+    for(let i=0; i<toDelete.length; i+=400) {
+      const batch = db.batch();
+      toDelete.slice(i,i+400).forEach(ref => batch.delete(ref));
+      await batch.commit();
+    }
+    toast('✅ ' + toDelete.length + ' duplicados eliminados (PN+Ubicación)', 'ok');
+  } catch(e) { toast('Error: ' + e.message,'err'); console.error(e); }
+}
+window.cleanDuplicatesPorPN = cleanDuplicatesPorPN;
 
 function resetStock() { if(user.role!=='admin'){toast('Solo admins','err');return;} if(!confirm('¿Resetear inventario inicial?'))return; items=MASTER.map(r=>({...r,entradas:0,salidas:0,actual:r.inicial,historial:[{tipo:'INI',fecha:new Date().toISOString(),qty:r.inicial,loc:r.ubicacion,user:'Sistema',ref:'Reset'}]})); movs=[]; saveLocal(); updateDash(); renderInv(); renderHist(); renderLocMap(); toast('Stock reseteado','ok'); }
 
